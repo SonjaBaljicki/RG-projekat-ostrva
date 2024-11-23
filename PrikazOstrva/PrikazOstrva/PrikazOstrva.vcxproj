@@ -132,6 +132,8 @@
     <ClCompile Include="PrikazOstrva.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="island.frag" />
+    <None Include="island.vert" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

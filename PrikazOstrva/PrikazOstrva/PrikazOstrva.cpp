@@ -1,7 +1,9 @@
-// Autor: Nedeljko Tesanovic
+﻿// Autor: Nedeljko Tesanovic
 // Opis: Zestoko iskomentarisan program koji crta sareni trougao u OpenGL-u
 
 #define _CRT_SECURE_NO_WARNINGS
+#define CRES 30 // Circle Resolution = Rezolucija kruga
+
  //Biblioteke za stvari iz C++-a (unos, ispis, fajlovi, itd - potrebne za kompajler sejdera) 
 #include <iostream>
 #include <fstream>
@@ -13,6 +15,7 @@
 
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
 unsigned int createShader(const char* vsSource, const char* fsSource); //Pravi objedinjeni sejder program koji se sastoji od Verteks sejdera ciji je kod na putanji vsSource i Fragment sejdera na putanji fsSource
+void generateCircle(float* circle, int offset, float r, float centerX, float centerY);
 
 int main(void)
 {
@@ -34,14 +37,15 @@ int main(void)
 
     //Stvaranje prozora
     GLFWwindow* window; //Mjesto u memoriji za prozor
-    /*unsigned int wWidth = 800;
-    unsigned int wHeight = 800;*/
+    unsigned int wWidth = 1200;
+    unsigned int wHeight = 800;
     const char wTitle[] = "[Island]";
 
-    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+  /*  GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);*/
 
-    window = glfwCreateWindow(mode->width, mode->height, wTitle, primaryMonitor, NULL); // Napravi novi prozor
+    //window = glfwCreateWindow(mode->width, mode->height, wTitle, primaryMonitor, NULL); // Napravi novi prozor
+    window = glfwCreateWindow(wWidth, wHeight, wTitle, NULL, NULL); // Napravi novi prozor
     // glfwCreateWindow( sirina, visina, naslov, monitor na koji ovaj prozor ide preko citavog ekrana (u tom slucaju umjesto NULL ide glfwGetPrimaryMonitor() ), i prozori sa kojima ce dijeliti resurse )
     if (window == NULL) //Ako prozor nije napravljen
     {
@@ -59,24 +63,108 @@ int main(void)
         return 3;
     }
 
+    unsigned int shaderProgram = createShader("island.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+
+    unsigned int VAO[1]; 
+    glGenVertexArrays(1, VAO);
+    unsigned int VBO[1];
+    glGenBuffers(1, VBO);
+
+
+    float circle[(CRES + 2) * 2 * 4]; // Za tri kruga (3 puta broj tačaka)
+
+    float r1 = 0.4f; // Poluprečnik prvog kruga
+    float r2 = 0.2f; // Poluprečnik drugog kruga
+    float r3 = 0.2f; // Poluprečnik trećeg kruga
+    float r4 = 0.1f; //poluprecnik sunca
+
+    generateCircle(circle, 0, r4, 0.0f, 0.0f);  //sunce
+
+    int offset = (CRES + 2) * 2;
+    generateCircle(circle, offset, r1, 0.0f, 0.0f);
+
+    offset += (CRES + 2) * 2;
+    generateCircle(circle, offset, r2, 0.7f, 0.0f);
+
+    offset += (CRES + 2) * 2;
+    generateCircle(circle, offset, r3, -0.7f, 0.0f);
+
+
+    // Bind VAO, VBO, and send data to GPU
+    glBindVertexArray(VAO[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(circle), circle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++ RENDER LOOP - PETLJA ZA CRTANJE +++++++++++++++++++++++++++++++++++++++++++++++++
 
     glClearColor(0, 0, 1, 1); //Podesavanje boje pozadine: RGBA (R - Crvena, G - Zelena, B - Plava, A = neprovidno; Opseg od 0 do 1, gdje je 0 crno a 1 svijetlo)
 
-    while (!glfwWindowShouldClose(window)) //Beskonacna petlja iz koje izlazimo tek kada prozor treba da se zatvori
+    while (!glfwWindowShouldClose(window)) // Infinite loop
     {
-        //Unos od korisnika bez callback funckcije. GLFW_PRESS = Dugme je trenutno pritisnuto. GLFW_RELEASE = Dugme trenutno nije pritisnuto
+        // User input (Escape to close the window)
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
-        //Brisanje ekrana
-        glClear(GL_COLOR_BUFFER_BIT);
 
-        //Zamjena vidljivog bafera sa pozadinskim
+        // Getting window dimensions
+       /* int wWidth = mode->width;
+        int wHeight = mode->height;*/
+
+        glEnable(GL_SCISSOR_TEST);
+
+
+        // --- Top half of the screen (Sky blue) ---
+        glViewport(0, wHeight / 2, wWidth, wHeight / 2); // Set viewport for the top half
+        glScissor(0, wHeight / 2, wWidth, wHeight / 2); // Restrict drawing to the top half
+        glClearColor(0.529, 0.808, 0.922, 1); // Sky blue color
+        glClear(GL_COLOR_BUFFER_BIT); // Clear the top half of the screen
+
+        glUseProgram(shaderProgram);
+
+        GLint offsetLocation = glGetUniformLocation(shaderProgram, "offset");
+        glUniform2f(offsetLocation, -0.8f, 0.8f);
+
+        GLint colorLocation = glGetUniformLocation(shaderProgram, "color");
+        glUniform3f(colorLocation, 1.0f, 1.0f, 0.0f); 
+
+        // Bind and draw the bottom circle
+        glBindVertexArray(VAO[0]);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2)); // Prvi krug, tj sunce
+        glBindVertexArray(0);
+        glUseProgram(0);
+
+        glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
+        glScissor(0, 0, wWidth, wHeight / 2); // Restrict drawing to the bottom half
+        glClearColor(0, 0, 0.5, 1); // Dark blue color for the water
+        glClear(GL_COLOR_BUFFER_BIT); // Clear the top half of the screen
+
+
+        // Use shader program to draw the bottom half circle (water)
+        glUseProgram(shaderProgram);
+
+        glUniform2f(offsetLocation, 0.0f, 0.0f);
+        glUniform3f(colorLocation, 194.0f / 255.0f, 178.0f / 255.0f, 128.0f / 255.0f);
+
+        // Bind and draw the bottom circle
+        glBindVertexArray(VAO[0]);
+        glDrawArrays(GL_TRIANGLE_FAN, (CRES + 2), (CRES + 2)); // Prvi krug
+        glDrawArrays(GL_TRIANGLE_FAN, (CRES + 2) * 2, (CRES + 2)); // Drugi krug
+        glDrawArrays(GL_TRIANGLE_FAN, (CRES + 2) * 3, (CRES + 2)); // Treci krug
+        glBindVertexArray(0);
+        glUseProgram(0);
+
+        glDisable(GL_SCISSOR_TEST);
+
+
+        // Swap buffers to update the screen
         glfwSwapBuffers(window);
 
-        //Hvatanje dogadjaja koji se ticu okvira prozora (promjena velicine, pomjeranje itd)
+        // Handle events (keyboard, mouse, etc.)
         glfwPollEvents();
 
     }
@@ -84,9 +172,24 @@ int main(void)
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++ POSPREMANJE +++++++++++++++++++++++++++++++++++++++++++++++++
 
     //Sve OK - batali program
+
+
     glfwTerminate();
     return 0;
 }
+
+void generateCircle(float* circle, int offset, float r, float centerX, float centerY) {
+
+    circle[offset] = centerX;
+    circle[offset + 1] = centerY;
+
+    for (int i = 0; i <= CRES; i++) {
+        circle[offset + 2 + 2 * i] = r * cos((3.141592 / 180) * (i * 360 / CRES)) + centerX; // Xi
+        circle[offset + 2 + 2 * i + 1] = r * sin((3.141592 / 180) * (i * 360 / CRES)) + centerY; // Yi
+    }
+}
+
+
 
 unsigned int compileShader(GLenum type, const char* source)
 {
