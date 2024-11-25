@@ -12,15 +12,46 @@
 //Biblioteke OpenGL-a
 #include <GL/glew.h>   //Omogucava laksu upotrebu OpenGL naredbi
 #include <GLFW/glfw3.h>//Olaksava pravljenje i otvaranje prozora (konteksta) sa OpenGL sadrzajem
+#include <thread> // Za sleep_for
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+struct SmokeParticle{
+	float position[2];  // Pozicija na ekranu (x, y)
+	float velocity[2];  // Brzina kretanja (x, y)
+	char character;     // Slovo ("P", "O", "M", itd.)
+	float alpha;        // Providnost (0.0 - 1.0)
+};
+
+// Globalne promenljive za dimne čestice
+SmokeParticle smokeParticles[100]; // Pretpostavimo maksimalno 100 čestica
+int smokeParticleCount = 0;
+GLuint fontTextures[128]; // Podržava ASCII kodove
+
+
+bool mouseClicked = false;
+float clickX = 0.0f;
+float clickY = 0.0f;
+float clickTime = 0.0f;
+float maxRadius = 0.5f;  // Maksimalni radijus kruga
+
 
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
 unsigned int createShader(const char* vsSource, const char* fsSource); //Pravi objedinjeni sejder program koji se sastoji od Verteks sejdera ciji je kod na putanji vsSource i Fragment sejdera na putanji fsSource
 void generateCircle(float* circle, int offset, float r, float centerX, float centerY);
 void bindCircleData(unsigned int VAO, unsigned int VBO, float* data, size_t dataSize);
 static unsigned loadImageToTexture(const char* filePath); //Ucitavanje teksture, izdvojeno u funkciju
+void mouse_callback(GLFWwindow* window, int button, int action, int mods);
+void setUniforms(GLuint shaderProgram);
+
+//void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+//void generateSmokeSignal();
+//void updateSmokeParticles();
+//void renderSmokeParticles(unsigned int textShaderProgram, unsigned int textVAO, unsigned int textVBO);
+//void loadFontTextures();
+//void renderText(unsigned int textShaderProgram, unsigned int textVAO, unsigned int textVBO, char character, float x, float y, float size, float alpha);
 
 
 int main(void)
@@ -75,12 +106,14 @@ int main(void)
 	unsigned int palmShaderProgram = createShader("palm.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int fireShaderProgram = createShader("fire.vert", "fire.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int waterShaderProgram = createShader("basic.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int textShaderProgram = createShader("text.vert", "text.frag");
+	unsigned int sharkShaderProgram = createShader("shark.vert", "basic.frag");
+	unsigned int redCircleShaderProgram = createShader("basic.vert", "basic.frag");
 
-
-	unsigned int VAO[6]; // Jedan VAO za svaki krug, pamlu i vatru
-	unsigned int VBO[6]; // Jedan VBO za svaki krug, palmu i vatru
-	glGenVertexArrays(6, VAO);
-	glGenBuffers(6, VBO);
+	unsigned int VAO[7]; // Jedan VAO za svaki krug, pamlu i vatru
+	unsigned int VBO[7]; // Jedan VBO za svaki krug, palmu i vatru
+	glGenVertexArrays(7, VAO);
+	glGenBuffers(7, VBO);
 
 	unsigned int waterVAO[1];
 	unsigned int waterVBO[1];
@@ -124,6 +157,9 @@ int main(void)
 	float circle4[(CRES + 2) * 2];
 	generateCircle(circle4, 0, r3, -0.8f, 0.0f); // Treći krug
 	bindCircleData(VAO[3], VBO[3], circle4, sizeof(circle4));
+
+
+
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++ RENDER LOOP - PETLJA ZA CRTANJE +++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -175,6 +211,71 @@ int main(void)
 	glEnableVertexAttribArray(0);
 
 
+	const int numSharks = 4; // Broj ajkula
+	const float centerX = 0.0f;
+	const float centerY = -0.2f;
+	r1 = 0.7;
+
+	float sharkPositions[numSharks][2]; // Trenutne pozicije ajkula (x, y)
+	float sharkDirections[numSharks][2]; // Pravci kretanja ajkula (x, y)
+	bool sharksMoving[numSharks]; // Da li se ajkula kreće
+	float sharkSpeed = 0.001f; // Brzina ajkula
+
+	float initialSharkPositions[numSharks][2]; // Početne pozicije ajkula
+	for (int i = 0; i < numSharks; i++) {
+		initialSharkPositions[i][0] = r1 * cos((2.0f * 3.141592f / numSharks) * i) + centerX;
+		initialSharkPositions[i][1] = r1 * sin((2.0f * 3.141592f / numSharks) * i) + centerY;
+	}
+
+	for (int i = 0; i < numSharks; i++) {
+		sharkPositions[i][0] = r1 * cos((2.0f * 3.141592f / numSharks) * i) + centerX;
+		sharkPositions[i][1] = r1 * sin((2.0f * 3.141592f / numSharks) * i) + centerY;
+		sharksMoving[i] = false; // Početno stanje: ajkule miruju
+	}
+
+	float sharkTemplate[] = {
+	  -0.075f, -0.0475f, 0.0f,  // Donji levi (uvećano)
+	 0.075f, -0.0475f, 0.0f,  // Donji desni (uvećano)
+	 0.0f,   0.175f,   0.0f   // Gornji vrh (uvećano)
+	};
+
+	// Vertex podaci za sve ajkule
+	float sharkVertices[numSharks * 9]; // 3 verteksa po ajkuli * 3 komponente (x, y, z)
+
+	for (int i = 0; i < numSharks; i++) {
+		float angle = (2.0f * 3.141592f / numSharks) * i; // Ugao za trenutnu ajkulu
+		float offsetX = r1 * cos(angle) + centerX; // X koordinata
+		float offsetY = r1 * sin(angle) + centerY; // Y koordinata
+
+		// Dodajte pomeraj za ajkule koje se nalaze sa prednje strane
+		if (angle >= 0.0f && angle <= 3.141592f) { // Ugao od 0 do 180 stepeni (prednja strana)
+			offsetY -= 0.1f; // Spustite ajkule na prednjem delu kruga (pomeraj prema dole)
+		}
+
+		// Ažuriranje verteksa za trenutnu ajkulu
+		for (int j = 0; j < 9; j += 3) {
+			sharkVertices[i * 9 + j] = sharkTemplate[j] + offsetX;  // X koordinata
+			sharkVertices[i * 9 + j + 1] = sharkTemplate[j + 1] + offsetY;  // Y koordinata
+			sharkVertices[i * 9 + j + 2] = sharkTemplate[j + 2];  // Z koordinata
+		}
+	}
+
+	unsigned int sharksVAO, sharksVBO;
+	glGenVertexArrays(1, &sharksVAO);
+	glGenBuffers(1, &sharksVBO);
+
+	glBindVertexArray(sharksVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, sharksVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sharkVertices), sharkVertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
 	bool waterTransparencyEnabled = false; // Početno stanje
 	bool bKeyPressed = false; // Da li je taster trenutno pritisnut
 
@@ -188,6 +289,33 @@ int main(void)
 	cursorImage.pixels = image; // Pixel podaci
 
 	GLFWcursor* cursor = glfwCreateCursor(&cursorImage, 0, 0);
+
+	glfwSetMouseButtonCallback(window, mouse_callback);
+
+
+	//glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+	/*unsigned int textVAO[1];
+	unsigned int textVBO[1];
+	glGenVertexArrays(1, textVAO);
+	glGenBuffers(1, textVBO);
+
+	glBindVertexArray(textVAO[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, textVBO[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);*/
+
+
+	//loadFontTextures();
+	//generateSmokeSignal();
+
+	float r5 = 0.05f;  // poluprecnik crvenog kruga
+	float r5pom = 0.05f;  // poluprecnik crvenog kruga
+
+
 
 	while (!glfwWindowShouldClose(window)) // Infinite loop
 	{
@@ -209,9 +337,10 @@ int main(void)
 
 		glfwSetCursor(window, cursor);
 
-		// Getting window dimensions
+		//// Getting window dimensions
 		int wWidth = mode->width;
 		int wHeight = mode->height;
+
 
 		glEnable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST);
@@ -237,6 +366,10 @@ int main(void)
 
 		glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
 		glScissor(0, 0, wWidth, wHeight / 2); // Restrict drawing to the bottom half
+
+		//renderSmokeParticles(textShaderProgram, textVAO[0], textVBO[0]);		
+		//updateSmokeParticles();
+
 
 		glUseProgram(palmShaderProgram);
 
@@ -267,22 +400,118 @@ int main(void)
 		unsigned int fireColorLocation = glGetUniformLocation(fireShaderProgram, "color");
 		glUniform4f(fireColorLocation, 1.0f, green, 0.0f, 1.0f);
 
-		unsigned int lightPosLocation = glGetUniformLocation(fireShaderProgram, "lightPos");
-		glUniform3f(lightPosLocation, 0.0f, 0.5f, 0.0f);
-
-		unsigned int lightIntensityLocation = glGetUniformLocation(fireShaderProgram, "lightIntensity");
-		glUniform1f(lightIntensityLocation, sin(glfwGetTime()) * 0.5f + 1.0f);
-
-		unsigned int normalLocation = glGetUniformLocation(fireShaderProgram, "normal");
-		glUniform3f(normalLocation, 0.0f, 1.0f, 0.0f);
-
-
 		glBindVertexArray(VAO[5]);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO[5]);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
+		float waterLevel = abs(sin(glfwGetTime())) * 0.3f;
+
+		for (int i = 0; i < numSharks; i++) {
+			if (sharksMoving[i]) {
+				// Pomerite ajkulu prema pravcu
+				sharkPositions[i][0] += sharkDirections[i][0] * sharkSpeed;
+				sharkPositions[i][1] += sharkDirections[i][1] * sharkSpeed;
+
+				// Proverite da li je ajkula stigla do centra kruga
+				float dx = clickX - sharkPositions[i][0];
+				float dy = clickY - sharkPositions[i][1];
+				if (sqrt(dx * dx + dy * dy) <= maxRadius) {
+					sharksMoving[i] = false; // Zaustavite ajkulu
+				}
+			}
+		}
+
+
+		glUseProgram(sharkShaderProgram);
+		unsigned int sharkColorLocation = glGetUniformLocation(sharkShaderProgram, "color");
+		glUniform4f(sharkColorLocation, 0.0f, 0.03, 1.0f, 1.0f);
+
+		unsigned int waterLevelLocation = glGetUniformLocation(sharkShaderProgram, "waterLevel");
+		glUniform1f(waterLevelLocation, waterLevel);
+
+		unsigned int sharkTimeLocation = glGetUniformLocation(sharkShaderProgram, "time");
+		glUniform1f(sharkTimeLocation, glfwGetTime());
+
+		unsigned int sharkSpeedLocation = glGetUniformLocation(sharkShaderProgram, "speed");
+		glUniform1f(sharkSpeedLocation, 0.8f);
+
+		float sharkVertices[numSharks * 9];
+		for (int i = 0; i < numSharks; i++) {
+			float offsetX = sharkPositions[i][0];
+			float offsetY = sharkPositions[i][1];
+			for (int j = 0; j < 9; j += 3) {
+				sharkVertices[i * 9 + j] = sharkTemplate[j] + offsetX;
+				sharkVertices[i * 9 + j + 1] = sharkTemplate[j + 1] + offsetY;
+				sharkVertices[i * 9 + j + 2] = sharkTemplate[j + 2];
+			}
+		}
+
+		// Bindovanje novih podataka
+		glBindVertexArray(sharksVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, sharksVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(sharkVertices), sharkVertices, GL_DYNAMIC_DRAW);
+
+		//glBindVertexArray(sharksVAO);
+		//glBindBuffer(GL_ARRAY_BUFFER, sharksVBO);
+		glDrawArrays(GL_TRIANGLES, 0, numSharks * 3); // 3 verteksa po ajkuli * broj ajkula
+
+
 
 		// Use shader program to draw the bottom half circle (water)
+
+		if (mouseClicked) {
+
+			for (int i = 0; i < numSharks; i++) {
+				float dx = clickX - sharkPositions[i][0];
+				float dy = clickY - sharkPositions[i][1];
+				float length = sqrt(dx * dx + dy * dy); // Udaljenost od centra
+				sharkDirections[i][0] = dx / length;   // Normalizovani pravac
+				sharkDirections[i][1] = dy / length;
+				sharksMoving[i] = true; // Pokrenite ajkulu
+			}
+
+			float elapsedTime = glfwGetTime() - clickTime; // Proteklo vreme od klika
+			// Generisanje podataka za krug
+			float circle5[(CRES + 2) * 2];
+			generateCircle(circle5, 0, r5pom, clickX, clickY);
+			r5pom += 0.00004f;
+			bindCircleData(VAO[6], VBO[6], circle5, sizeof(circle5));
+
+			// Renderovanje kruga
+			glUseProgram(redCircleShaderProgram);
+			setUniforms(redCircleShaderProgram);
+			glBindVertexArray(VAO[6]);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
+
+			if (elapsedTime > 5.0) {
+				mouseClicked = false;
+				r5pom = r5;
+			}
+		}
+		else {
+			for (int i = 0; i < numSharks; i++) {
+				float dx = initialSharkPositions[i][0] - sharkPositions[i][0];
+				float dy = initialSharkPositions[i][1] - sharkPositions[i][1];
+				float distance = sqrt(dx * dx + dy * dy);
+
+				if (distance > 0.01f) { // Ako nije blizu početne pozicije
+					sharkPositions[i][0] += (dx / distance) * sharkSpeed;
+					sharkPositions[i][1] += (dy / distance) * sharkSpeed;
+				}
+				else {
+					// Ako je stigla do početne pozicije
+					sharkPositions[i][0] = initialSharkPositions[i][0];
+					sharkPositions[i][1] = initialSharkPositions[i][1];
+					sharksMoving[i] = false; // Zaustavite kretanje ajkula
+
+				}
+
+			}
+		}
+
+
+		
+
 		glUseProgram(islandsShaderProgram);
 
 		unsigned int islandOffsetLocation = glGetUniformLocation(islandsShaderProgram, "offset");
@@ -290,9 +519,7 @@ int main(void)
 		unsigned int islandColorLocation = glGetUniformLocation(islandsShaderProgram, "color");
 		glUniform4f(islandColorLocation, 194.0f / 255.0f, 178.0f / 255.0f, 128.0f / 255.0f, 1.0f);
 
-		float waterLevel = abs(sin(glfwGetTime())) * 0.3f;
-
-		unsigned int waterLevelLocation = glGetUniformLocation(islandsShaderProgram, "waterLevel");
+		waterLevelLocation = glGetUniformLocation(islandsShaderProgram, "waterLevel");
 		glUniform1f(waterLevelLocation, waterLevel);
 
 		// Bind and draw the bottom circles
@@ -351,6 +578,55 @@ int main(void)
 	return 0;
 }
 
+void setUniforms(GLuint shaderProgram) {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	GLint clickPosLocation = glGetUniformLocation(shaderProgram, "clickPosition");
+	GLint timeLocation = glGetUniformLocation(shaderProgram, "time");
+	GLint startTimeLocation = glGetUniformLocation(shaderProgram, "startTime");
+	GLint maxRadiusLocation = glGetUniformLocation(shaderProgram, "maxRadius");
+	unsigned int colorLocation = glGetUniformLocation(shaderProgram, "color");
+
+	glUniform4f(colorLocation, 1.0f, 0.0f, 0.0f, 0.5f);
+	glUniform2f(clickPosLocation, clickX, clickY);
+	glUniform1f(timeLocation, glfwGetTime());
+	glUniform1f(startTimeLocation, clickTime);
+	glUniform1f(maxRadiusLocation, maxRadius);
+}
+
+void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos); // Dobijamo koordinate miša u prozorskom sistemu
+
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight); // Dimenzije prozora aplikacije
+
+		// Konvertuj koordinate miša iz prozorskog sistema u OpenGL normalizovane koordinate
+		clickX = (xpos / windowWidth) * 2.0 - 1.0;   // Mapiranje na [-1, 1]
+		clickY = -((ypos / windowHeight) * 2.0 - 1.0); //
+
+		clickTime = glfwGetTime();  // Započni vreme kada je kliknut taster
+		mouseClicked = true;
+	}
+}
+
+
+//void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
+//	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+//		double xpos, ypos;
+//		glfwGetCursorPos(window, &xpos, &ypos);
+//
+//		// Konvertovanje u normalizovane koordinate
+//		clickX = (xpos / SCREEN_WIDTH) * 2.0f - 1.0f;
+//		clickY = 1.0f - (ypos / SCREEN_HEIGHT) * 2.0f;
+//
+//		isAttracting = true;
+//	}
+//}
+
+
+
 static unsigned loadImageToTexture(const char* filePath) {
 	int TextureWidth;
 	int TextureHeight;
@@ -387,8 +663,6 @@ static unsigned loadImageToTexture(const char* filePath) {
 		return 0;
 	}
 }
-
-
 
 void bindCircleData(unsigned int VAO, unsigned int VBO, float* data, size_t dataSize) {
 	glBindVertexArray(VAO);

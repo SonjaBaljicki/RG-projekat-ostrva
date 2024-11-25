@@ -132,6 +132,7 @@
     <ClCompile Include="PrikazOstrva.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="basic.frag" />
     <None Include="fire.frag" />
     <None Include="fire.vert" />
     <None Include="island.frag" />
@@ -140,8 +141,11 @@
     <None Include="palm.vert" />
     <None Include="pointer.frag" />
     <None Include="pointer.vert" />
+    <None Include="shark.vert" />
     <None Include="sun.vert" />
     <None Include="basic.vert" />
+    <None Include="text.frag" />
+    <None Include="text.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h" />
