@@ -132,9 +132,19 @@
     <ClCompile Include="PrikazOstrva.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="fire.frag" />
+    <None Include="fire.vert" />
     <None Include="island.frag" />
     <None Include="island.vert" />
     <None Include="packages.config" />
+    <None Include="palm.vert" />
+    <None Include="pointer.frag" />
+    <None Include="pointer.vert" />
+    <None Include="sun.vert" />
+    <None Include="basic.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
