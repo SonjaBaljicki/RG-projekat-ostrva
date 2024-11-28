@@ -133,6 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="basic.frag" />
+    <None Include="cloud.vert" />
     <None Include="fire.frag" />
     <None Include="fire.vert" />
     <None Include="island.frag" />
