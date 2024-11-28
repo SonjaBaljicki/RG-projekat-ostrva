@@ -118,8 +118,8 @@ int main(void)
 
 	//Stvaranje prozora
 	GLFWwindow* window; //Mjesto u memoriji za prozor
-	unsigned int wWidth = 1200;
-	unsigned int wHeight = 800;
+	//unsigned int wWidth = 1000;
+	//unsigned int wHeight = 600;
 	const char wTitle[] = "[Island]";
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
@@ -385,7 +385,7 @@ int main(void)
 
 		glfwSetCursor(window, cursor);
 
-		//// Getting window dimensions
+		// Getting window dimensions
 		int wWidth = mode->width;
 		int wHeight = mode->height;
 
