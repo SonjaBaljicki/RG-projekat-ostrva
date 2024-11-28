@@ -130,11 +130,11 @@ int main(void)
 	unsigned int palmShaderProgram = createShader("palm.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int fireShaderProgram = createShader("fire.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int waterShaderProgram = createShader("basic.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
-	unsigned int textShaderProgram = createShader("text.vert", "text.frag");
 	unsigned int sharkShaderProgram = createShader("shark.vert", "basic.frag");
 	unsigned int redCircleShaderProgram = createShader("basic.vert", "basic.frag");
 	unsigned int cloudShaderProgram = createShader("cloud.vert", "basic.frag");
 	unsigned int starShaderProgram = createShader("star.vert", "star.frag");
+	unsigned int nameShaderProgram = createShader("name.vert", "name.frag");
 
 	unsigned int VAO[8]; // Jedan VAO za svaki krug, pamlu i vatru
 	unsigned int VBO[8]; // Jedan VBO za svaki krug, palmu i vatru
@@ -376,6 +376,142 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
+	float nameVertices[] = {
+		// Koordinate (X, Y)        // Teksturne koordinate (S, T)
+		-1.0f, -1.0f,   0.0f, 0.0f,  // Donji desni ugao
+		-1.0f + 0.3f, -1.0f,  1.0f, 0.0f,  // Donji levi ugao (širina povećana)
+		-1.0f, -1.0f + 0.1f,  0.0f, 1.0f,  // Gornji desni ugao (visina smanjena)
+
+		-1.0f + 0.3f, -1.0f,          1.0f, 0.0f,  // Donji levi ugao (širina povećana)
+		-1.0f + 0.3f, -1.0f + 0.1f,    1.0f, 1.0f,  // Gornji levi ugao (visina smanjena)
+		-1.0f, -1.0f + 0.1f,          0.0f, 1.0f   // Gornji desni ugao (visina smanjena)
+	};
+
+	unsigned int nameVAO, nameVBO;
+	glGenVertexArrays(1, &nameVAO);
+	glGenBuffers(1, &nameVBO);
+	glBindVertexArray(nameVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, nameVBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(nameVertices), nameVertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	unsigned nameTexture = loadImageToTexture("C:/Users/Sonja/Desktop/ime.png");
+	glBindTexture(GL_TEXTURE_2D, nameTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+	float pomocVertices[] = {
+		// Kvadrat 1 (smanjen tri puta)
+		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+
+		// Kvadrat 2 (smanjen tri puta)
+		-0.3f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 2
+		0.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 2
+		-0.3f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 2
+		0.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 2
+		0.2f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 2
+		-0.3f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 2
+
+		// Kvadrat 3 (smanjen tri puta)
+		0.2f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 3
+		0.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 3
+		0.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 3
+		0.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 3
+		0.7f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 3
+		0.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 3
+
+		// Kvadrat 4 (smanjen tri puta)
+		0.7f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 4
+		1.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 4
+		0.7f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 4
+		1.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 4
+		1.2f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 4
+		0.7f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 4
+
+		// Novi kvadrat (smanjen tri puta, dodan na pretposlednje mesto)
+		1.2f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao novog kvadrata
+		1.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao novog kvadrata
+		1.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao novog kvadrata
+		1.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao novog kvadrata
+		1.7f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao novog kvadrata
+		1.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f   // Gornji levi ugao novog kvadrata
+	};
+
+
+
+	unsigned int pomocVAO, pomocVBO;
+	glGenVertexArrays(1, &pomocVAO);
+	glGenBuffers(1, &pomocVBO);
+
+	// Prvo vezujemo VAO (Vertex Array Object)
+	glBindVertexArray(pomocVAO);
+
+	// Zatim vezujemo VBO (Vertex Buffer Object)
+	glBindBuffer(GL_ARRAY_BUFFER, pomocVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(pomocVertices), pomocVertices, GL_STATIC_DRAW);
+
+	// Definišemo kako se podaci (vertices) interpretiraju
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// Otpajanje VBO i VAO
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	unsigned pTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/P.png");
+	glBindTexture(GL_TEXTURE_2D, pTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	unsigned oTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/O.png");
+	glBindTexture(GL_TEXTURE_2D, oTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	unsigned mTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/M.png");
+	glBindTexture(GL_TEXTURE_2D, mTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	unsigned cTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/C.png");
+	glBindTexture(GL_TEXTURE_2D, cTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
 
 	while (!glfwWindowShouldClose(window)) // Infinite loop
 	{
@@ -464,6 +600,57 @@ int main(void)
 
 		glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
 		glScissor(0, 0, wWidth, wHeight / 2); // Restrict drawing to the bottom half
+
+		glUseProgram(nameShaderProgram);
+		unsigned uTexLoc = glGetUniformLocation(nameShaderProgram, "uTex");
+		glUniform1i(uTexLoc, 0);
+
+		glActiveTexture(GL_TEXTURE0); //tekstura koja se bind-uje nakon ovoga ce se koristiti sa SAMPLER2D uniformom u sejderu koja odgovara njenom indeksu
+		glBindTexture(GL_TEXTURE_2D, nameTexture);
+
+		glBindVertexArray(nameVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, nameVBO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glUniform1i(uTexLoc, 1); // Aktiviramo teksturu na lokaciji 0
+		// Prvi kvadrat
+		glActiveTexture(GL_TEXTURE1); // Aktiviraj teksturu na lokaciji 0
+		glBindTexture(GL_TEXTURE_2D, pTexture); // Poveži prvu teksturu
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 0, 6); // Nacrtaj prvi kvadrat
+
+		// Drugi kvadrat
+		glUniform1i(uTexLoc, 2); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, oTexture); // Poveži drugu teksturu
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 6, 6); // Nacrtaj drugi kvadrat
+
+		// Treći kvadrat
+		glUniform1i(uTexLoc, 3); // Aktiviraj teksturu na lokaciji 2
+		glActiveTexture(GL_TEXTURE3); // Aktiviraj teksturu na lokaciji 2
+		glBindTexture(GL_TEXTURE_2D, mTexture); // Poveži treću teksturu
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 12, 6); // Nacrtaj treći kvadrat
+
+		// Četvrti kvadrat
+		glUniform1i(uTexLoc, 2); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, oTexture); // Pov
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 18, 6); // Nacrtaj četvrti kvadrat
+
+		glUniform1i(uTexLoc, 4); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE4); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, cTexture); // Pov
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 24, 6); // Nacrtaj četvrti kvadrat
+
 
 
 		glUseProgram(palmShaderProgram);
@@ -777,16 +964,28 @@ int main(void)
 	glDeleteVertexArrays(1, &starVAO);
 	glDeleteBuffers(1, &starVBO);
 
+	glDeleteVertexArrays(1, &nameVAO);
+	glDeleteBuffers(1, &nameVBO);
+
+	glDeleteVertexArrays(1, &pomocVAO);
+	glDeleteBuffers(1, &pomocVBO);
+
 	glDeleteShader(islandsShaderProgram);
 	glDeleteShader(sunShaderProgram);
 	glDeleteShader(palmShaderProgram);
 	glDeleteShader(fireShaderProgram);
 	glDeleteShader(waterShaderProgram);
-	glDeleteShader(textShaderProgram);
 	glDeleteShader(sharkShaderProgram);
 	glDeleteShader(redCircleShaderProgram);
 	glDeleteShader(cloudShaderProgram);
 	glDeleteShader(starShaderProgram);
+	glDeleteShader(nameShaderProgram);
+
+	glDeleteTextures(1, &nameTexture);
+	glDeleteTextures(1, &pTexture);
+	glDeleteTextures(1, &oTexture);
+	glDeleteTextures(1, &mTexture);
+	glDeleteTextures(1, &cTexture);
 
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++ POSPREMANJE +++++++++++++++++++++++++++++++++++++++++++++++++

@@ -136,21 +136,17 @@
   <ItemGroup>
     <None Include="basic.frag" />
     <None Include="cloud.vert" />
-    <None Include="fire.frag" />
     <None Include="fire.vert" />
-    <None Include="island.frag" />
     <None Include="island.vert" />
+    <None Include="name.frag" />
+    <None Include="name.vert" />
     <None Include="packages.config" />
     <None Include="palm.vert" />
-    <None Include="pointer.frag" />
-    <None Include="pointer.vert" />
     <None Include="shark.vert" />
     <None Include="star.frag" />
     <None Include="star.vert" />
     <None Include="sun.vert" />
     <None Include="basic.vert" />
-    <None Include="text.frag" />
-    <None Include="text.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h" />
