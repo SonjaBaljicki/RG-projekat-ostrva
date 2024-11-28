@@ -42,29 +42,10 @@ struct Cloud{
 
 Cloud clouds[3];  // Staticki niz od 3 oblaka
 
-//float sunRadius = 0.2f;  // Poluprečnik polukruga
-//float sunOffsetY = -0.8f;  // Visina na kojoj se sunce nalazi
-//float timeFactor = 0.0f;  // Vreme koje se koristi za animaciju sunca
-//float sunSpeed = 0.01f;
 
-//float sunOffsetY = -0.8f;  // Y pozicija sunca (gornja polovina ekrana)
-//float timeFactor = 0.0f;   // Vreme koje se koristi za animaciju sunca
-//float sunSpeed = 0.00001f;    // Brzina pomeranja sunca
-//float sunStartX = -1.0f;   // Početna X pozicija (levo)
-//float sunEndX = 1.0f;
-
-//float sunOffsetY = 0.8f;  // Y pozicija sunca (gornja polovina ekrana)
-//float angle = -M_PI / 2.0f;  // Početni ugao (-90 stepeni) - levo
-//float angleSpeed = 0.001f;   // Brzina pomeranja ugla
-//float radius = 1.0f;
-
-//float sunOffsetX = -1.0f;  // Početna pozicija X (donja leva ivica gornje polovine ekrana)
-//float sunOffsetY = -0.9f;  // Početna pozicija Y (na gornjoj polovini ekrana, ali na donjoj ivici)
-//float angle = 0;  // Početni ugao (-90 stepeni) - počinje sa donje leve strane gornje polovine
 float angleSpeed = 0.001f;   // Brzina pomeranja ugla
 float radiusX = -0.9f;        // Poluprečnik putanje (polukrug)
 float radiusY = -0.9f;        // Poluprečnik putanje (polukrug)
-
 float sunOffsetX = -0.9f;  // Početna pozicija X (donja leva ivica gornje polovine)
 float sunOffsetY = -0.9f;  // Početna pozicija Y (donja leva ivica gornje polovine)
 float angle = 0.0f;  // Početni ugao
@@ -75,6 +56,8 @@ float clickX = 0.0f;
 float clickY = 0.0f;
 float clickTime = 0.0f;
 float maxRadius = 0.5f;  // Maksimalni radijus kruga
+
+bool sunIsSet = false;
 
 
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
@@ -88,14 +71,8 @@ bool isClickOnWater(float clickX, float clickY, const Island* islands, int numIs
 void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands);
 void updateClouds();
 void updateSunPosition(unsigned int sunShaderProgram);
-
-
-//void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-//void generateSmokeSignal();
-//void updateSmokeParticles();
-//void renderSmokeParticles(unsigned int textShaderProgram, unsigned int textVAO, unsigned int textVBO);
-//void loadFontTextures();
-//void renderText(unsigned int textShaderProgram, unsigned int textVAO, unsigned int textVBO, char character, float x, float y, float size, float alpha);
+void updateMoonPosition(unsigned int sunShaderProgram);
+void generateRounderCircle(float* circle, int offset, float r, float centerX, float centerY, float aspectRatio);
 
 
 int main(void)
@@ -125,6 +102,9 @@ int main(void)
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
+	float aspectRatio = (float)mode->width / (float)mode->height;
+
+
 	window = glfwCreateWindow(mode->width, mode->height, wTitle, primaryMonitor, NULL); // Napravi novi prozor
 	//window = glfwCreateWindow(wWidth, wHeight, wTitle, NULL, NULL); // Napravi novi prozor
 	// glfwCreateWindow( sirina, visina, naslov, monitor na koji ovaj prozor ide preko citavog ekrana (u tom slucaju umjesto NULL ide glfwGetPrimaryMonitor() ), i prozori sa kojima ce dijeliti resurse )
@@ -145,20 +125,21 @@ int main(void)
 	}
 
 
-	unsigned int islandsShaderProgram = createShader("island.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
-	unsigned int sunShaderProgram = createShader("sun.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
-	unsigned int palmShaderProgram = createShader("palm.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
-	unsigned int fireShaderProgram = createShader("fire.vert", "fire.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
-	unsigned int waterShaderProgram = createShader("basic.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int islandsShaderProgram = createShader("island.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int sunShaderProgram = createShader("sun.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int palmShaderProgram = createShader("palm.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int fireShaderProgram = createShader("fire.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int waterShaderProgram = createShader("basic.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int textShaderProgram = createShader("text.vert", "text.frag");
 	unsigned int sharkShaderProgram = createShader("shark.vert", "basic.frag");
 	unsigned int redCircleShaderProgram = createShader("basic.vert", "basic.frag");
 	unsigned int cloudShaderProgram = createShader("cloud.vert", "basic.frag");
+	unsigned int starShaderProgram = createShader("star.vert", "star.frag");
 
-	unsigned int VAO[7]; // Jedan VAO za svaki krug, pamlu i vatru
-	unsigned int VBO[7]; // Jedan VBO za svaki krug, palmu i vatru
-	glGenVertexArrays(7, VAO);
-	glGenBuffers(7, VBO);
+	unsigned int VAO[8]; // Jedan VAO za svaki krug, pamlu i vatru
+	unsigned int VBO[8]; // Jedan VBO za svaki krug, palmu i vatru
+	glGenVertexArrays(8, VAO);
+	glGenBuffers(8, VBO);
 
 	unsigned int waterVAO[1];
 	unsigned int waterVBO[1];
@@ -190,7 +171,7 @@ int main(void)
 	Island islands[] = { {r1, 0.0f, 0.0f}, {r2,0.8f, 0.0f}, {r3, -0.8f, 0.0f} };
 
 	float circle1[(CRES + 2) * 2];
-	generateCircle(circle1, 0, 0.2f, 0.0f, 0.0f); // Sunce
+	generateRounderCircle(circle1, 0, 0.15f, 0.0f, 0.0f, aspectRatio); // Sunce
 	bindCircleData(VAO[0], VBO[0], circle1, sizeof(circle1));
 
 	float circle2[(CRES + 2) * 2];
@@ -204,6 +185,10 @@ int main(void)
 	float circle4[(CRES + 2) * 2];
 	generateCircle(circle4, 0, r3, -0.8f, 0.0f); // Treći krug
 	bindCircleData(VAO[3], VBO[3], circle4, sizeof(circle4));
+
+	float circle5[(CRES + 2) * 2];
+	generateRounderCircle(circle5, 0, 0.1f, 0.0f, 0.0f, aspectRatio); // Mesec
+	bindCircleData(VAO[7], VBO[7], circle5, sizeof(circle5));
 
 	unsigned int cloudVAO[3]; // Jedan VAO za svaki krug, pamlu i vatru
 	unsigned int cloudVBO[3]; // Jedan VBO za svaki krug, palmu i vatru
@@ -340,9 +325,6 @@ int main(void)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindVertexArray(0);
-
 
 	bool waterTransparencyEnabled = false; // Početno stanje
 	bool bKeyPressed = false; // Da li je taster trenutno pritisnut
@@ -363,6 +345,36 @@ int main(void)
 	float r5 = 0.05f;  // poluprecnik crvenog kruga
 	float r5pom = 0.05f;  // poluprecnik crvenog kruga
 
+
+	const int STAR_COUNT = 100;
+	float starVertices[STAR_COUNT * 3]; // X, Y, i Veličina za svaku zvezdu
+
+	for (int i = 0; i < STAR_COUNT; i++) {
+		// X i Y između -1 i 1
+		starVertices[i * 3] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;    // X
+		starVertices[i * 3 + 1] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f; // Y
+
+		// Veličina između 3 i 8
+		starVertices[i * 3 + 2] = ((float)rand() / RAND_MAX) * 5.0f + 3.0f; // Veličina između 3 i 8
+	}
+
+	unsigned int starVAO, starVBO;
+	glGenVertexArrays(1, &starVAO);
+	glGenBuffers(1, &starVBO);
+
+	glBindVertexArray(starVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, starVBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(starVertices), starVertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(2 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 
 	while (!glfwWindowShouldClose(window)) // Infinite loop
@@ -389,7 +401,6 @@ int main(void)
 		int wWidth = mode->width;
 		int wHeight = mode->height;
 
-
 		glEnable(GL_SCISSOR_TEST);
 		glEnable(GL_DEPTH_TEST);
 
@@ -397,9 +408,32 @@ int main(void)
 		// --- Top half of the screen (Sky blue) ---
 		glViewport(0, wHeight / 2, wWidth, wHeight / 2); // Set viewport for the top half
 		glScissor(0, wHeight / 2, wWidth, wHeight / 2); // Restrict drawing to the top half
-		glClearColor(0.529, 0.808, 0.922, 1); // Sky blue color
+
+		if (sunIsSet) {
+			glClearColor(0.01, 0.1, 0.2, 1); // Još tamnija nijansa plave
+			glUseProgram(starShaderProgram); // Šejder program za zvezde
+
+			glUniform1f(glGetUniformLocation(starShaderProgram, "time"), glfwGetTime());
+			glUniform3f(glGetUniformLocation(starShaderProgram, "skyColor"), 0.01, 0.1, 0.2);
+
+			glBindVertexArray(starVAO);
+			glDrawArrays(GL_POINTS, 0, STAR_COUNT);
+		}
+		else {
+			glClearColor(0.529, 0.808, 0.922, 1); // Sky blue color
+		}
+
 
 		glUseProgram(cloudShaderProgram);
+
+		unsigned int ambientLightLocation = glGetUniformLocation(cloudShaderProgram, "ambientLight");
+
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
 
 		unsigned int cloudOffsetLocation = glGetUniformLocation(cloudShaderProgram, "offset");
 		unsigned int cloudColorLocation = glGetUniformLocation(cloudShaderProgram, "color");
@@ -414,34 +448,33 @@ int main(void)
 			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));  // Crtanje svakog oblaka (tri kruga)
 		}
 
-		updateSunPosition(sunShaderProgram);
-		glBindVertexArray(VAO[0]);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2)); // Prvi krug, tj sunce
+		if (!sunIsSet) {
+			updateSunPosition(sunShaderProgram);
+			glBindVertexArray(VAO[0]);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2)); // Prvi krug, tj sunce
+		}
+		else {
+			updateMoonPosition(sunShaderProgram);
+			glBindVertexArray(VAO[7]);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
+			//mesec izlazi
+		}
+		
 
-
-		//glUseProgram(sunShaderProgram);
-
-		//unsigned int sunOffsetLocation = glGetUniformLocation(sunShaderProgram, "offset");
-		//glUniform2f(sunOffsetLocation, sunOffsetX, sunOffsetY);
-
-		//unsigned int sunColorLocation = glGetUniformLocation(sunShaderProgram, "color");
-		//glUniform4f(sunColorLocation, 1.0f, 1.0f, 0.0f, 1.0f);
-
-
-		//glBindVertexArray(VAO[0]);
-		//glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2)); // Prvi krug, tj sunce
-
-		//glBindVertexArray(0);
-		//glUseProgram(0);
 
 		glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
 		glScissor(0, 0, wWidth, wHeight / 2); // Restrict drawing to the bottom half
 
-		//renderSmokeParticles(textShaderProgram, textVAO[0], textVBO[0]);		
-		//updateSmokeParticles();
-
 
 		glUseProgram(palmShaderProgram);
+
+		ambientLightLocation = glGetUniformLocation(palmShaderProgram, "ambientLight");
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
 
 		unsigned int palmColorLocation = glGetUniformLocation(palmShaderProgram, "color");
 
@@ -459,6 +492,14 @@ int main(void)
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glUseProgram(fireShaderProgram);
+
+		ambientLightLocation = glGetUniformLocation(fireShaderProgram, "ambientLight");
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
 
 		float fireSize = sin(glfwGetTime()) * 1.0f + 1.5f;
 
@@ -514,6 +555,15 @@ int main(void)
 
 
 		glUseProgram(sharkShaderProgram);
+
+		ambientLightLocation = glGetUniformLocation(sharkShaderProgram, "ambientLight");
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
+
 		unsigned int sharkColorLocation = glGetUniformLocation(sharkShaderProgram, "color");
 		glUniform4f(sharkColorLocation, 0.0f, 0.03, 1.0f, 1.0f);
 
@@ -570,6 +620,14 @@ int main(void)
 
 			// Renderovanje kruga
 			glUseProgram(redCircleShaderProgram);
+
+			ambientLightLocation = glGetUniformLocation(redCircleShaderProgram, "ambientLight");
+			if (sunIsSet) {
+				glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+			}
+			else {
+				glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+			}
 			setUniforms(redCircleShaderProgram);
 			glBindVertexArray(VAO[6]);
 			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
@@ -620,6 +678,14 @@ int main(void)
 
 		glUseProgram(islandsShaderProgram);
 
+		ambientLightLocation = glGetUniformLocation(islandsShaderProgram, "ambientLight");
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
+
 		unsigned int islandOffsetLocation = glGetUniformLocation(islandsShaderProgram, "offset");
 
 		unsigned int islandColorLocation = glGetUniformLocation(islandsShaderProgram, "color");
@@ -647,6 +713,14 @@ int main(void)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glUseProgram(waterShaderProgram);
+
+		ambientLightLocation = glGetUniformLocation(waterShaderProgram, "ambientLight");
+		if (sunIsSet) {
+			glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+		}
+		else {
+			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+		}
 
 		unsigned int waterColorLocation = glGetUniformLocation(waterShaderProgram, "color");
 
@@ -700,6 +774,9 @@ int main(void)
 	glDeleteVertexArrays(1, &sharksVAO);
 	glDeleteBuffers(1, &sharksVBO);
 
+	glDeleteVertexArrays(1, &starVAO);
+	glDeleteBuffers(1, &starVBO);
+
 	glDeleteShader(islandsShaderProgram);
 	glDeleteShader(sunShaderProgram);
 	glDeleteShader(palmShaderProgram);
@@ -709,6 +786,7 @@ int main(void)
 	glDeleteShader(sharkShaderProgram);
 	glDeleteShader(redCircleShaderProgram);
 	glDeleteShader(cloudShaderProgram);
+	glDeleteShader(starShaderProgram);
 
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++ POSPREMANJE +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -745,39 +823,6 @@ void updateClouds() {
 	}
 }
 
-//void updateSunPosition(unsigned int sunShaderProgram) {
-//	// Izračunavamo poziciju sunca duž polukružne putanje
-//	float sunX = sunRadius * cos(timeFactor);  // X pozicija sunca
-//	float sunY = sunRadius * sin(timeFactor) + sunOffsetY;  // Y pozicija sunca
-//
-//	// Ažuriraj vrednosti uniforma u šejderu
-//	glUseProgram(sunShaderProgram);
-//
-//	unsigned int sunOffsetLocation = glGetUniformLocation(sunShaderProgram, "offset");
-//	glUniform2f(sunOffsetLocation, sunX, sunY);  // Pošaljite novu poziciju u šejder
-//
-//	timeFactor += sunSpeed;  // Povećavamo vreme faktor za animaciju
-//	if (timeFactor > M_PI) {  // Sunce je prešlo polukrug
-//		timeFactor = M_PI;  // Zaustavljamo kretanje kada sunce zađe
-//	}
-//}
-//void updateSunPosition(unsigned int sunShaderProgram) {
-//	// Izračunavamo poziciju sunca duž horizontalne putanje
-//	float sunX = sunStartX + timeFactor * (sunEndX - sunStartX);  // X pozicija sunca od leve do desne
-//	float sunY = sunOffsetY;  // Y pozicija ostaje konstantna u gornjoj polovini ekrana
-//
-//	// Ažuriraj vrednosti uniforma u šejderu
-//	glUseProgram(sunShaderProgram);
-//
-//	unsigned int sunOffsetLocation = glGetUniformLocation(sunShaderProgram, "offset");
-//	glUniform2f(sunOffsetLocation, sunX, sunY);  // Pošaljite novu poziciju u šejder
-//
-//	// Povećavamo vreme faktor za animaciju
-//	timeFactor += sunSpeed;
-//	if (timeFactor > 1.0f) {  // Kada sunce dostigne desnu ivicu ekrana
-//		timeFactor = 1.0f;  // Zaustavljamo kretanje na desnoj ivici
-//	}
-//}
 bool down = false;
 
 void updateSunPosition(unsigned int sunShaderProgram) {
@@ -791,8 +836,6 @@ void updateSunPosition(unsigned int sunShaderProgram) {
 		sunOffsetY = -sin(angle) - 0.9f * sin(angle);  // Y pozicija
 	}
 
-
-
 	angle += angleSpeed;
 
 	if (angle > M_PI / 2.0f && !down) {
@@ -802,14 +845,60 @@ void updateSunPosition(unsigned int sunShaderProgram) {
 	if (angle > M_PI/ 2.0f && down) {
 		angle = 0;  
 		down = false; 
+		sunIsSet = true;
 	}
 
 	glUseProgram(sunShaderProgram);
+	unsigned int ambientLightLocation = glGetUniformLocation(sunShaderProgram, "ambientLight");
+	if (sunIsSet) {
+		glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+	}
+	else {
+		glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+	}
 	unsigned int sunOffsetLocation = glGetUniformLocation(sunShaderProgram, "offset");
 	glUniform2f(sunOffsetLocation, sunOffsetX, sunOffsetY);
 
 	unsigned int sunColorLocation = glGetUniformLocation(sunShaderProgram, "color");
 	glUniform4f(sunColorLocation, 1.0f, 1.0f, 0.0f, 1.0f);
+}
+
+void updateMoonPosition(unsigned int sunShaderProgram) {
+
+	if (!down) {
+		sunOffsetX = -radiusX - 0.9f * sin(angle);  // X pozicija
+		sunOffsetY = radiusY + 0.9f * sin(angle);  // Y pozicija	
+	}
+	else {
+		sunOffsetX = -sin(angle) - 0.9f * sin(angle);  // X pozicija
+		sunOffsetY = -sin(angle) - 0.9f * sin(angle);  // Y pozicija
+	}
+
+	angle += angleSpeed;
+
+	if (angle > M_PI / 2.0f && !down) {
+		down = true;
+		angle = 0;
+	}
+	if (angle > M_PI / 2.0f && down) {
+		angle = 0;
+		down = false;
+		sunIsSet = false;
+	}
+
+	glUseProgram(sunShaderProgram);
+	unsigned int ambientLightLocation = glGetUniformLocation(sunShaderProgram, "ambientLight");
+	if (sunIsSet) {
+		glUniform4f(ambientLightLocation, 0.6f, 0.6f, 0.7f, 1.0f); // Blago tamnija svetlost
+	}
+	else {
+		glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
+	}
+	unsigned int sunOffsetLocation = glGetUniformLocation(sunShaderProgram, "offset");
+	glUniform2f(sunOffsetLocation, sunOffsetX, sunOffsetY);
+
+	unsigned int sunColorLocation = glGetUniformLocation(sunShaderProgram, "color");
+	glUniform4f(sunColorLocation, 0.98f, 0.95f, 0.88f, 1.0f);
 
 }
 
@@ -906,7 +995,7 @@ void bindCircleData(unsigned int VAO, unsigned int VBO, float* data, size_t data
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	/*glBindVertexArray*/(0);
+	/*glBindVertexArray(0);*/
 }
 
 void generateCircle(float* circle, int offset, float r, float centerX, float centerY) {
@@ -919,6 +1008,33 @@ void generateCircle(float* circle, int offset, float r, float centerX, float cen
 		circle[offset + 2 + 2 * i + 1] = r * sin((3.141592 / 180) * (i * 360 / CRES)) + centerY; // Yi
 	}
 }
+
+void generateRounderCircle(float* circle, int offset, float r, float centerX, float centerY, float aspectRatio) {
+	int index = offset;
+
+	// Pravite krug koristeći parametarsku formulu
+	for (int i = 0; i <= CRES; i++) {
+		float angle = (2.0f * 3.141592f * i) / CRES;  // Ugao u radijanima
+
+		// Skalirajte X i Y koordinate u zavisnosti od aspect ratio
+		float x = r * cos(angle) + centerX;  // X koordinata
+		float y = r * sin(angle) + centerY;  // Y koordinata
+
+		// Ako je aspectRatio > 1, ekran je širi, pa skaliraj samo Y
+		if (aspectRatio > 1.0f) {
+			y *= aspectRatio;
+		}
+		// Ako je aspectRatio < 1, ekran je viši, pa skaliraj samo X
+		else if (aspectRatio < 1.0f) {
+			x *= aspectRatio;
+		}
+
+		// Dodaj tačke u array
+		circle[index++] = x;  // X koordinata
+		circle[index++] = y;  // Y koordinata
+	}
+}
+
 
 
 

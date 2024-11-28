@@ -145,6 +145,8 @@
     <None Include="pointer.frag" />
     <None Include="pointer.vert" />
     <None Include="shark.vert" />
+    <None Include="star.frag" />
+    <None Include="star.vert" />
     <None Include="sun.vert" />
     <None Include="basic.vert" />
     <None Include="text.frag" />
