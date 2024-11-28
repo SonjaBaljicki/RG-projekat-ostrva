@@ -331,7 +331,7 @@ int main(void)
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	int width, height, channels;
-	unsigned char* image= stbi_load("C:/Users/Sonja/Desktop/udica.png", &width, &height, &channels, 4);
+	unsigned char* image= stbi_load("images/udica.png", &width, &height, &channels, 4);
 
 	GLFWimage cursorImage;
 	cursorImage.width = width;
@@ -404,7 +404,7 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	unsigned nameTexture = loadImageToTexture("C:/Users/Sonja/Desktop/ime.png");
+	unsigned nameTexture = loadImageToTexture("images/ime.png");
 	glBindTexture(GL_TEXTURE_2D, nameTexture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -479,7 +479,7 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	unsigned pTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/P.png");
+	unsigned pTexture = loadImageToTexture("images/P.png");
 	glBindTexture(GL_TEXTURE_2D, pTexture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -487,7 +487,7 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	unsigned oTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/O.png");
+	unsigned oTexture = loadImageToTexture("images/O.png");
 	glBindTexture(GL_TEXTURE_2D, oTexture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -495,7 +495,7 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	unsigned mTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/M.png");
+	unsigned mTexture = loadImageToTexture("images/M.png");
 	glBindTexture(GL_TEXTURE_2D, mTexture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -503,7 +503,7 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	unsigned cTexture = loadImageToTexture("C:/Users/Sonja/Desktop/images/C.png");
+	unsigned cTexture = loadImageToTexture("images/C.png");
 	glBindTexture(GL_TEXTURE_2D, cTexture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
