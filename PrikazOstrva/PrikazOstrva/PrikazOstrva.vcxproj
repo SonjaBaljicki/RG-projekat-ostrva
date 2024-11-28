@@ -142,6 +142,7 @@
     <None Include="name.vert" />
     <None Include="packages.config" />
     <None Include="palm.vert" />
+    <None Include="pomoc.frag" />
     <None Include="shark.vert" />
     <None Include="star.frag" />
     <None Include="star.vert" />

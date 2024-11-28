@@ -135,6 +135,7 @@ int main(void)
 	unsigned int cloudShaderProgram = createShader("cloud.vert", "basic.frag");
 	unsigned int starShaderProgram = createShader("star.vert", "star.frag");
 	unsigned int nameShaderProgram = createShader("name.vert", "name.frag");
+	unsigned int pomocShaderProgram = createShader("name.vert", "pomoc.frag");
 
 	unsigned int VAO[8]; // Jedan VAO za svaki krug, pamlu i vatru
 	unsigned int VBO[8]; // Jedan VBO za svaki krug, palmu i vatru
@@ -511,6 +512,14 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+	unsigned smokeTexture = loadImageToTexture("images/smoke.png");
+	glBindTexture(GL_TEXTURE_2D, smokeTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 
 
 	while (!glfwWindowShouldClose(window)) // Infinite loop
@@ -531,6 +540,9 @@ int main(void)
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		glfwSetCursor(window, cursor);
 
 		// Getting window dimensions
@@ -547,6 +559,7 @@ int main(void)
 
 		if (sunIsSet) {
 			glClearColor(0.01, 0.1, 0.2, 1); // Još tamnija nijansa plave
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glUseProgram(starShaderProgram); // Šejder program za zvezde
 
 			glUniform1f(glGetUniformLocation(starShaderProgram, "time"), glfwGetTime());
@@ -557,7 +570,10 @@ int main(void)
 		}
 		else {
 			glClearColor(0.529, 0.808, 0.922, 1); // Sky blue color
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		}
+
 
 
 		glUseProgram(cloudShaderProgram);
@@ -595,8 +611,6 @@ int main(void)
 			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
 			//mesec izlazi
 		}
-		
-
 
 		glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
 		glScissor(0, 0, wWidth, wHeight / 2); // Restrict drawing to the bottom half
@@ -612,46 +626,7 @@ int main(void)
 		glBindBuffer(GL_ARRAY_BUFFER, nameVBO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		glUniform1i(uTexLoc, 1); // Aktiviramo teksturu na lokaciji 0
-		// Prvi kvadrat
-		glActiveTexture(GL_TEXTURE1); // Aktiviraj teksturu na lokaciji 0
-		glBindTexture(GL_TEXTURE_2D, pTexture); // Poveži prvu teksturu
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 0, 6); // Nacrtaj prvi kvadrat
-
-		// Drugi kvadrat
-		glUniform1i(uTexLoc, 2); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, oTexture); // Poveži drugu teksturu
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 6, 6); // Nacrtaj drugi kvadrat
-
-		// Treći kvadrat
-		glUniform1i(uTexLoc, 3); // Aktiviraj teksturu na lokaciji 2
-		glActiveTexture(GL_TEXTURE3); // Aktiviraj teksturu na lokaciji 2
-		glBindTexture(GL_TEXTURE_2D, mTexture); // Poveži treću teksturu
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 12, 6); // Nacrtaj treći kvadrat
-
-		// Četvrti kvadrat
-		glUniform1i(uTexLoc, 2); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, oTexture); // Pov
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 18, 6); // Nacrtaj četvrti kvadrat
-
-		glUniform1i(uTexLoc, 4); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE4); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, cTexture); // Pov
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 24, 6); // Nacrtaj četvrti kvadrat
-
-
+		
 
 		glUseProgram(palmShaderProgram);
 
@@ -896,9 +871,6 @@ int main(void)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
 
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 		glUseProgram(waterShaderProgram);
 
 		ambientLightLocation = glGetUniformLocation(waterShaderProgram, "ambientLight");
@@ -918,6 +890,8 @@ int main(void)
 			glUniform4f(waterColorLocation, 0.0f, 0.0f, 0.5f, 1.0f);  // Neprozirna plava voda (alfa = 1.0)
 		}
 
+
+
 		// Renderujte vodu kao pozadinu
 		glBindVertexArray(waterVAO[0]);
 		glBindBuffer(GL_ARRAY_BUFFER, waterVBO[0]);
@@ -929,6 +903,56 @@ int main(void)
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_DEPTH_TEST);
+
+		glUseProgram(pomocShaderProgram);
+		unsigned int textTextureLoc = glGetUniformLocation(pomocShaderProgram, "textTexture");
+		unsigned int smokeTextureLoc = glGetUniformLocation(pomocShaderProgram, "smokeTexture");
+
+		glUniform1i(smokeTextureLoc, 5); // Aktiviraj teksturu na lokaciji 5
+
+		glActiveTexture(GL_TEXTURE5); // Aktiviraj teksturu 5
+		glBindTexture(GL_TEXTURE_2D, smokeTexture); // Poveži teksturu sa ID-jem za dim
+
+
+		// Renderuj teksturu slova za pomoc
+		glUniform1i(textTextureLoc, 1); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE1); // Aktiviraj teksturu 1
+		glBindTexture(GL_TEXTURE_2D, pTexture); // Poveži teksturu sa ID-jem za slova		
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+		// Drugi kvadrat
+		glUniform1i(textTextureLoc, 2); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, oTexture); // Poveži drugu teksturu
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 6, 6); // Nacrtaj drugi kvadrat
+
+		// Treći kvadrat
+		glUniform1i(textTextureLoc, 3); // Aktiviraj teksturu na lokaciji 2
+		glActiveTexture(GL_TEXTURE3); // Aktiviraj teksturu na lokaciji 2
+		glBindTexture(GL_TEXTURE_2D, mTexture); // Poveži treću teksturu
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 12, 6); // Nacrtaj treći kvadrat
+
+		// Četvrti kvadrat
+		glUniform1i(textTextureLoc, 2); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, oTexture); // Pov
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 18, 6); // Nacrtaj četvrti kvadrat
+
+		glUniform1i(textTextureLoc, 4); // Aktiviraj teksturu na lokaciji 1
+		glActiveTexture(GL_TEXTURE4); // Aktiviraj teksturu na lokaciji 1
+		glBindTexture(GL_TEXTURE_2D, cTexture); // Pov
+		glBindVertexArray(pomocVAO); // Poveži VAO
+		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
+		glDrawArrays(GL_TRIANGLES, 24, 6); // Nacrtaj četvrti kvadrat
 
 
 		// Swap buffers to update the screen
