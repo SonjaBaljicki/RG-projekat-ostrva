@@ -11,5 +11,5 @@ void main() {
     vec4 textColor = texture(textTexture, chTex);
     vec4 smokeColor = texture(smokeTexture, chTex);
 
-    FragColor = mix(textColor, smokeColor, smokeColor.a * 0.6);
+    FragColor = mix(textColor, smokeColor, smokeColor.a * 0.5);
 }

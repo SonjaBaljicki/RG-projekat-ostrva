@@ -43,7 +43,7 @@ struct Cloud{
 Cloud clouds[3];  // Staticki niz od 3 oblaka
 
 
-float angleSpeed = 0.001f;   // Brzina pomeranja ugla
+float angleSpeed = 0.0003f;   // Brzina pomeranja ugla
 float radiusX = -0.9f;        // Poluprečnik putanje (polukrug)
 float radiusY = -0.9f;        // Poluprečnik putanje (polukrug)
 float sunOffsetX = -0.9f;  // Početna pozicija X (donja leva ivica gornje polovine)
@@ -430,41 +430,41 @@ int main(void)
 
 
 	float pomocVertices[] = {
-		// Kvadrat 1 (smanjen tri puta)
-		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-1.2f / 5.0f,  0.2f / 5.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.7f / 5.0f,  0.7f / 5.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
 
-		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
+		-1.2f / 5.0f,  0.2f / 5.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.7f / 5.0f,  0.7f / 5.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
 
-		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
+		-1.2f / 5.0f,  0.2f / 5.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.7f / 5.0f,  0.7f / 5.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
 
-		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
+		-1.2f / 5.0f,  0.2f / 5.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.7f / 5.0f,  0.7f / 5.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
 
-		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
-		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
-		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
-		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
+		-1.2f / 5.0f,  0.2f / 5.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.7f / 5.0f,  0.2f / 5.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.7f / 5.0f,  0.7f / 5.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-1.2f / 5.0f,  0.7f / 5.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+
 	};
 
 
@@ -936,10 +936,15 @@ int main(void)
 			for (int i = 0; i < 5; i++) {
 				if (isVisible[i]) { // Prvi element uvek treba da bude vidljiv na početku
 					// Animacija trenutnog objekta
-					offsetY[i] += 0.001f; // Povećaj Y poziciju
+					offsetY[i] += 0.0002f; // Povećaj Y poziciju
 
 					if (offsetY[i] > 0.5f) { // Ako dostigne limit, sakrij ga i prikaži sledeći
 						isVisible[i] = false;
+						if (i + 1 < 5) { // Proveri da li postoji sledeći element
+							isVisible[i + 1] = true;
+						}
+					}
+					else if (offsetY[i] > -0.06f) {
 						if (i + 1 < 5) { // Proveri da li postoji sledeći element
 							isVisible[i + 1] = true;
 						}
@@ -950,12 +955,12 @@ int main(void)
 
 					// Podesi teksturu za trenutno slovo
 					switch (i) {
-					case 4: // C
+					case 0: // C
 						glUniform1i(textTextureLoc, 4);
 						glActiveTexture(GL_TEXTURE4);
 						glBindTexture(GL_TEXTURE_2D, cTexture);
 						break;
-					case 3: // O
+					case 1: // O
 						glUniform1i(textTextureLoc, 2);
 						glActiveTexture(GL_TEXTURE2);
 						glBindTexture(GL_TEXTURE_2D, oTexture);
@@ -965,12 +970,12 @@ int main(void)
 						glActiveTexture(GL_TEXTURE3);
 						glBindTexture(GL_TEXTURE_2D, mTexture);
 						break;
-					case 1: // O
+					case 3: // O
 						glUniform1i(textTextureLoc, 2);
 						glActiveTexture(GL_TEXTURE2);
 						glBindTexture(GL_TEXTURE_2D, oTexture);
 						break;
-					case 0: // P
+					case 4: // P
 						glUniform1i(textTextureLoc, 1);
 						glActiveTexture(GL_TEXTURE1);
 						glBindTexture(GL_TEXTURE_2D, pTexture);
@@ -1061,6 +1066,7 @@ int main(void)
 	glDeleteTextures(1, &oTexture);
 	glDeleteTextures(1, &mTexture);
 	glDeleteTextures(1, &cTexture);
+	glDeleteTextures(1, &smokeTexture);
 
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++ POSPREMANJE +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1258,21 +1264,6 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
 		handleMouseClick(clickX, clickY, islands, numIslands, fireVertices);
 	}
 }
-
-
-//bool isClickOnWater(float clickX, float clickY, const Island* islands, int numIslands) {
-//	for (int i = 0; i < numIslands; i++) {
-//		float dx = clickX - islands[i].x;
-//		float dy = clickY - islands[i].y;
-//		float distance = sqrt(dx * dx + dy * dy);
-//
-//		// Proverite da li je klik unutar radijusa ostrva
-//		if (distance <= islands[i].radius) {
-//			return false; // Klik je na ostrvu
-//		}
-//	}
-//	return true; // Klik je na vodi
-//}
 
 
 
