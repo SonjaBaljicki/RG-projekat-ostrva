@@ -65,6 +65,24 @@ float startY = -0.2f; // Početna pozicija Y za objekat
 float offsetY[5] = { -0.2f, -0.2f, -0.2f, -0.2f, -0.2f}; // Offset Y for each letter
 bool isVisible[5] = { true, false, false, false, false }; // Visibility for each letter
 
+
+
+float flameLightColor[] = { 1.0f, 0.0f, 0.0f };     // Boja svetla (r, g, b)
+float flameLightIntensity = 0.1f;
+
+float flameRadius = 0.1f; // Promenljivi poluprečnik
+float flameAngle = 0; // Ugao koji se menja tokom vremena
+
+// Koordinate centra plamena
+float flameCenterX = -0.25f;
+float flameCenterY = 0.25f;
+
+int numPoints = 10;
+float flameLightPosition[20]; // Za pozicije svetla
+
+float timeFactor = 1.0f;  // Početna brzina (normalna brzina)
+float initialTimeFactor = 1.0f;  // Početna vrednost za resetovanje
+
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
 unsigned int createShader(const char* vsSource, const char* fsSource); //Pravi objedinjeni sejder program koji se sastoji od Verteks sejdera ciji je kod na putanji vsSource i Fragment sejdera na putanji fsSource
 void generateCircle(float* circle, int offset, float r, float centerX, float centerY);
@@ -85,6 +103,12 @@ bool isClickOnWater(float clickX, float clickY, Island* islands, int numIslands)
 bool isClickOnIsland(float clickX, float clickY, const Island& island);
 void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands, float fireVertices[]);
 void mouse_callback(GLFWwindow* window, int button, int action, int mods);
+
+void updateFlameLight(float flameSize, float time);
+void decreaseTimeSpeed();
+void increaseTimeSpeed();
+void resetTime();
+
 
 
 int main(void)
@@ -140,7 +164,7 @@ int main(void)
 	}
 
 
-	unsigned int islandsShaderProgram = createShader("island.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
+	unsigned int islandsShaderProgram = createShader("island.vert", "island.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int sunShaderProgram = createShader("sun.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int palmShaderProgram = createShader("palm.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
 	unsigned int fireShaderProgram = createShader("fire.vert", "basic.frag"); // Pretpostavljamo da ovo pravi shader program sa uniformom `offset`
@@ -541,6 +565,19 @@ int main(void)
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
 
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		{
+			decreaseTimeSpeed();
+		}
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		{
+			increaseTimeSpeed();
+		}
+		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+		{
+			resetTime();
+		}
+
 		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && waterTransparencyEnabled) {
 			waterTransparencyEnabled = false;
 		}
@@ -573,7 +610,7 @@ int main(void)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glUseProgram(starShaderProgram); // Šejder program za zvezde
 
-			glUniform1f(glGetUniformLocation(starShaderProgram, "time"), glfwGetTime());
+			glUniform1f(glGetUniformLocation(starShaderProgram, "time"), glfwGetTime()*timeFactor);
 			glUniform3f(glGetUniformLocation(starShaderProgram, "skyColor"), 0.01, 0.1, 0.2);
 
 			glBindVertexArray(starVAO);
@@ -674,12 +711,12 @@ int main(void)
 			glUniform4f(ambientLightLocation, 1.0f, 1.0f, 1.0f, 1.0f); // Pun sjaj dok je sunce
 		}
 
-		float fireSize = sin(glfwGetTime()) * 1.0f + 1.5f;
+		float fireSize = sin(glfwGetTime()* timeFactor) * 1.0f + 1.5f;
 
 		unsigned int fireSizeLocation = glGetUniformLocation(fireShaderProgram, "scaleY");
 		glUniform1f(fireSizeLocation, fireSize);
 
-		float green = sin(glfwGetTime() * 3.0f) * 0.3f + 0.3f;
+		float green = sin(glfwGetTime() * timeFactor * 3.0f) * 0.3f + 0.3f;
 
 		unsigned int fireColorLocation = glGetUniformLocation(fireShaderProgram, "color");
 		glUniform4f(fireColorLocation, 1.0f, green, 0.0f, 1.0f);
@@ -688,7 +725,7 @@ int main(void)
 		glBindBuffer(GL_ARRAY_BUFFER, VBO[5]);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
-		float waterLevel = abs(sin(glfwGetTime())) * 0.3f;
+		float waterLevel = abs(sin(glfwGetTime()*timeFactor)) * 0.3f;
 
 		for (int i = 0; i < numSharks; i++) {
 			if (sharksMoving[i]) {
@@ -744,7 +781,7 @@ int main(void)
 		glUniform1f(waterLevelLocation, waterLevel);
 
 		unsigned int sharkTimeLocation = glGetUniformLocation(sharkShaderProgram, "time");
-		glUniform1f(sharkTimeLocation, glfwGetTime());
+		glUniform1f(sharkTimeLocation, glfwGetTime()*timeFactor);
 
 		unsigned int sharkSpeedLocation = glGetUniformLocation(sharkShaderProgram, "speed");
 		glUniform1f(sharkSpeedLocation, 0.8f);
@@ -784,7 +821,7 @@ int main(void)
 				sharksMoving[i] = true; // Pokrenite ajkulu
 			}
 
-			float elapsedTime = glfwGetTime() - clickTime; // Proteklo vreme od klika
+			float elapsedTime = glfwGetTime()*timeFactor - clickTime; // Proteklo vreme od klika
 			// Generisanje podataka za krug
 			float circle5[(CRES + 2) * 2];
 			generateCircle(circle5, 0, r5pom, clickX, clickY);
@@ -850,6 +887,22 @@ int main(void)
 		
 
 		glUseProgram(islandsShaderProgram);
+
+		float flameTime = glfwGetTime()*timeFactor;
+
+		updateFlameLight(fireSize, flameTime);
+
+		unsigned int flameLightPositionLoc = glGetUniformLocation(islandsShaderProgram, "flameLightPosition");
+		unsigned int flameLightColorLoc = glGetUniformLocation(islandsShaderProgram, "flameLightColor");
+		unsigned int flameLightIntensityLoc = glGetUniformLocation(islandsShaderProgram, "flameLightIntensity");
+
+		fireSizeLocation = glGetUniformLocation(islandsShaderProgram, "scaleY");
+		glUniform1f(fireSizeLocation, fireSize);
+
+		glUniform3fv(flameLightPositionLoc, 1, flameLightPosition);  // Pozicija svetla
+		glUniform3fv(flameLightColorLoc, 1, flameLightColor);        // Boja svetla
+		glUniform1f(flameLightIntensityLoc, flameLightIntensity);          // Intenzitet svetla
+
 
 		ambientLightLocation = glGetUniformLocation(islandsShaderProgram, "ambientLight");
 		if (sunIsSet) {
@@ -1076,6 +1129,44 @@ int main(void)
 	return 0;
 }
 
+
+void increaseTimeSpeed() {
+	timeFactor += 0.1f;
+	angleSpeed += 0.00001;
+	for (auto& cloud : clouds) {
+		cloud.x += cloud.speed + 0.001; // Pomera oblak sa levog na desni kraj ekrana
+	}
+}
+
+void decreaseTimeSpeed() {
+	timeFactor -= 0.01f;  
+	angleSpeed -= 0.00001;
+	for (auto& cloud : clouds) {
+		cloud.x += cloud.speed - 0.001; // Pomera oblak sa levog na desni kraj ekrana
+	}
+
+}
+
+void resetTime() {
+	timeFactor = initialTimeFactor;  // Vraća brzinu na početnu vrednost
+	angleSpeed = 0.0003f;   // Brzina pomeranja ugla
+	for (auto& cloud : clouds) {
+		cloud.x += 0.01f; // Pomera oblak sa levog na desni kraj ekrana
+	}
+	angle = 0;
+}
+
+
+void updateFlameLight(float flameSize, float time) {
+
+	flameAngle = time;  // Ugao koji se menja tokom vremena
+
+	for (int i = 0; i < numPoints; i++) {
+		flameLightPosition[2 * i] = flameCenterX + flameRadius * cos(flameAngle);  // X koordinata
+		flameLightPosition[2 * i + 1] = flameCenterY + flameRadius * sin(flameAngle);  // Y koordinata
+	}
+}
+
 void setUniforms(GLuint shaderProgram) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1087,7 +1178,7 @@ void setUniforms(GLuint shaderProgram) {
 
 	glUniform4f(colorLocation, 1.0f, 0.0f, 0.0f, 0.5f);
 	glUniform2f(clickPosLocation, clickX, clickY);
-	glUniform1f(timeLocation, glfwGetTime());
+	glUniform1f(timeLocation, glfwGetTime()*timeFactor);
 	glUniform1f(startTimeLocation, clickTime);
 	glUniform1f(maxRadiusLocation, maxRadius);
 }
@@ -1243,7 +1334,7 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
 		clickX = (xpos / windowWidth) * 2.0 - 1.0;   // Mapiranje na [-1, 1]
 		clickY = -((ypos / windowHeight) * 2.0 - 1.0); // Obrnuto Y
 
-		clickTime = glfwGetTime();  // Započni vreme kada je kliknut taster
+		clickTime = glfwGetTime()*timeFactor;  // Započni vreme kada je kliknut taster
 
 		// Definicija ostrva
 		Island islands[] = {
