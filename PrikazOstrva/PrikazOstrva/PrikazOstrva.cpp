@@ -51,7 +51,7 @@ float sunOffsetY = -0.9f;  // Početna pozicija Y (donja leva ivica gornje polov
 float angle = 0.0f;  // Početni ugao
 
 
-bool mouseClicked = false;
+bool mouseClickedOnWater = false;
 float clickX = 0.0f;
 float clickY = 0.0f;
 float clickTime = 0.0f;
@@ -59,6 +59,11 @@ float maxRadius = 0.5f;  // Maksimalni radijus kruga
 
 bool sunIsSet = false;
 
+bool mouseClickedOnFire = false;
+float startX = 0.0f;
+float startY = -0.2f; // Početna pozicija Y za objekat
+float offsetY[5] = { -0.2f, -0.2f, -0.2f, -0.2f, -0.2f}; // Offset Y for each letter
+bool isVisible[5] = { true, false, false, false, false }; // Visibility for each letter
 
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
 unsigned int createShader(const char* vsSource, const char* fsSource); //Pravi objedinjeni sejder program koji se sastoji od Verteks sejdera ciji je kod na putanji vsSource i Fragment sejdera na putanji fsSource
@@ -68,11 +73,18 @@ static unsigned loadImageToTexture(const char* filePath); //Ucitavanje teksture,
 void mouse_callback(GLFWwindow* window, int button, int action, int mods);
 void setUniforms(GLuint shaderProgram);
 bool isClickOnWater(float clickX, float clickY, const Island* islands, int numIslands);
-void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands);
+//void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands);
 void updateClouds();
 void updateSunPosition(unsigned int sunShaderProgram);
 void updateMoonPosition(unsigned int sunShaderProgram);
 void generateRounderCircle(float* circle, int offset, float r, float centerX, float centerY, float aspectRatio);
+
+bool isPointInTriangle(float px, float py, float ax, float ay, float bx, float by, float cx, float cy);
+bool isClickOnFire(float clickX, float clickY, float fireVertices[]);
+bool isClickOnWater(float clickX, float clickY, Island* islands, int numIslands);
+bool isClickOnIsland(float clickX, float clickY, const Island& island);
+void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands, float fireVertices[]);
+void mouse_callback(GLFWwindow* window, int button, int action, int mods);
 
 
 int main(void)
@@ -103,6 +115,9 @@ int main(void)
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
 	float aspectRatio = (float)mode->width / (float)mode->height;
+
+	float heightLimit = (float)mode->height / 2.0f; // Halfway point of the screen (for disappearing)
+
 
 
 	window = glfwCreateWindow(mode->width, mode->height, wTitle, primaryMonitor, NULL); // Napravi novi prozor
@@ -423,37 +438,33 @@ int main(void)
 		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
 		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
 
-		// Kvadrat 2 (smanjen tri puta)
-		-0.3f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 2
-		0.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 2
-		-0.3f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 2
-		0.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 2
-		0.2f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 2
-		-0.3f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 2
+		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
 
-		// Kvadrat 3 (smanjen tri puta)
-		0.2f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 3
-		0.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 3
-		0.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 3
-		0.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 3
-		0.7f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 3
-		0.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 3
+		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
 
-		// Kvadrat 4 (smanjen tri puta)
-		0.7f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 4
-		1.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 4
-		0.7f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 4
-		1.2f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 4
-		1.2f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 4
-		0.7f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 4
+		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
 
-		// Novi kvadrat (smanjen tri puta, dodan na pretposlednje mesto)
-		1.2f / 3.0f,   0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao novog kvadrata
-		1.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao novog kvadrata
-		1.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao novog kvadrata
-		1.7f / 3.0f,   0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao novog kvadrata
-		1.7f / 3.0f,   0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao novog kvadrata
-		1.2f / 3.0f,   0.7f / 3.0f,   0.0f, 1.0f   // Gornji levi ugao novog kvadrata
+		-0.8f / 3.0f,  0.2f / 3.0f,   0.0f, 0.0f,  // Donji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gornji levi ugao kvadrata 1
+		-0.3f / 3.0f,  0.2f / 3.0f,   1.0f, 0.0f,  // Donji desni ugao kvadrata 1
+		-0.3f / 3.0f,  0.7f / 3.0f,   1.0f, 1.0f,  // Gornji desni ugao kvadrata 1
+		-0.8f / 3.0f,  0.7f / 3.0f,   0.0f, 1.0f,  // Gorn
 	};
 
 
@@ -762,7 +773,7 @@ int main(void)
 
 		// Use shader program to draw the bottom half circle (water)
 
-		if (mouseClicked) {
+		if (mouseClickedOnWater) {
 
 			for (int i = 0; i < numSharks; i++) {
 				float dx = clickX - sharkPositions[i][0];
@@ -795,7 +806,7 @@ int main(void)
 			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
 
 			if (elapsedTime > 5.0) {
-				mouseClicked = false;
+				mouseClickedOnWater = false;
 				r5pom = r5;
 			}
 		}
@@ -904,56 +915,96 @@ int main(void)
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_DEPTH_TEST);
 
-		glUseProgram(pomocShaderProgram);
-		unsigned int textTextureLoc = glGetUniformLocation(pomocShaderProgram, "textTexture");
-		unsigned int smokeTextureLoc = glGetUniformLocation(pomocShaderProgram, "smokeTexture");
+		// Aktiviraj shader program
+		glViewport(0, 0, wWidth, wHeight);  // Set viewport for the full screen
 
-		glUniform1i(smokeTextureLoc, 5); // Aktiviraj teksturu na lokaciji 5
+		if (mouseClickedOnFire) {
+			unsigned int textTextureLoc = glGetUniformLocation(pomocShaderProgram, "textTexture");
+			unsigned int smokeTextureLoc = glGetUniformLocation(pomocShaderProgram, "smokeTexture");
+			unsigned int translationLoc = glGetUniformLocation(pomocShaderProgram, "translation");
 
-		glActiveTexture(GL_TEXTURE5); // Aktiviraj teksturu 5
-		glBindTexture(GL_TEXTURE_2D, smokeTexture); // Poveži teksturu sa ID-jem za dim
+			glUseProgram(pomocShaderProgram);
 
+			// Aktiviraj i poveži dim teksturu
+			glUniform1i(smokeTextureLoc, 5); // Tekstura na lokaciji 5
+			glActiveTexture(GL_TEXTURE5);
+			glBindTexture(GL_TEXTURE_2D, smokeTexture);
 
-		// Renderuj teksturu slova za pomoc
-		glUniform1i(textTextureLoc, 1); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE1); // Aktiviraj teksturu 1
-		glBindTexture(GL_TEXTURE_2D, pTexture); // Poveži teksturu sa ID-jem za slova		
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+			// Pojavljivanje objekata od poslednjeg ka prvom
+			// Assuming these variables are initialized
 
+			for (int i = 0; i < 5; i++) {
+				if (isVisible[i]) { // Prvi element uvek treba da bude vidljiv na početku
+					// Animacija trenutnog objekta
+					offsetY[i] += 0.001f; // Povećaj Y poziciju
 
-		// Drugi kvadrat
-		glUniform1i(textTextureLoc, 2); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, oTexture); // Poveži drugu teksturu
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 6, 6); // Nacrtaj drugi kvadrat
+					if (offsetY[i] > 0.5f) { // Ako dostigne limit, sakrij ga i prikaži sledeći
+						isVisible[i] = false;
+						if (i + 1 < 5) { // Proveri da li postoji sledeći element
+							isVisible[i + 1] = true;
+						}
+					}
 
-		// Treći kvadrat
-		glUniform1i(textTextureLoc, 3); // Aktiviraj teksturu na lokaciji 2
-		glActiveTexture(GL_TEXTURE3); // Aktiviraj teksturu na lokaciji 2
-		glBindTexture(GL_TEXTURE_2D, mTexture); // Poveži treću teksturu
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 12, 6); // Nacrtaj treći kvadrat
+					// Podesi translaciju za trenutno slovo
+					glUniform2f(translationLoc, startX, startY + offsetY[i]);
 
-		// Četvrti kvadrat
-		glUniform1i(textTextureLoc, 2); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE2); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, oTexture); // Pov
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 18, 6); // Nacrtaj četvrti kvadrat
+					// Podesi teksturu za trenutno slovo
+					switch (i) {
+					case 4: // C
+						glUniform1i(textTextureLoc, 4);
+						glActiveTexture(GL_TEXTURE4);
+						glBindTexture(GL_TEXTURE_2D, cTexture);
+						break;
+					case 3: // O
+						glUniform1i(textTextureLoc, 2);
+						glActiveTexture(GL_TEXTURE2);
+						glBindTexture(GL_TEXTURE_2D, oTexture);
+						break;
+					case 2: // M
+						glUniform1i(textTextureLoc, 3);
+						glActiveTexture(GL_TEXTURE3);
+						glBindTexture(GL_TEXTURE_2D, mTexture);
+						break;
+					case 1: // O
+						glUniform1i(textTextureLoc, 2);
+						glActiveTexture(GL_TEXTURE2);
+						glBindTexture(GL_TEXTURE_2D, oTexture);
+						break;
+					case 0: // P
+						glUniform1i(textTextureLoc, 1);
+						glActiveTexture(GL_TEXTURE1);
+						glBindTexture(GL_TEXTURE_2D, pTexture);
+						break;
+					}
 
-		glUniform1i(textTextureLoc, 4); // Aktiviraj teksturu na lokaciji 1
-		glActiveTexture(GL_TEXTURE4); // Aktiviraj teksturu na lokaciji 1
-		glBindTexture(GL_TEXTURE_2D, cTexture); // Pov
-		glBindVertexArray(pomocVAO); // Poveži VAO
-		glBindBuffer(GL_ARRAY_BUFFER, pomocVBO); // Poveži VBO
-		glDrawArrays(GL_TRIANGLES, 24, 6); // Nacrtaj četvrti kvadrat
+					if (isVisible[i]) {
+						glBindVertexArray(pomocVAO);
+						glBindBuffer(GL_ARRAY_BUFFER, pomocVBO);
+						glDrawArrays(GL_TRIANGLES, i * 6, 6); // Ispravno skaliraj indeks
+					}
+				}
+			}
+			bool animationCompleted = true;
+			for (int i = 0; i < 5; i++) {
+				if (isVisible[i]) {
+					animationCompleted = false;
+					break;
+				}
+			}
 
+			if (animationCompleted) {
+				float initialOffsetY[5] = { -0.2f, -0.2f, -0.2f, -0.2f, -0.2f }; // Početne vrednosti za Y pomeranje
+				bool initialIsVisible[5] = { true, false, false, false, false }; // Početna vidljivost
+				for (int i = 0; i < 5; i++) {
+					offsetY[i] = initialOffsetY[i]; // Postavi offsetY na početne vrednosti
+					isVisible[i] = initialIsVisible[i];
+					mouseClickedOnFire = false;
+					startX = 0.0f;
+					startY = -0.2f;
+				}
+			}
+
+		}
 
 		// Swap buffers to update the screen
 		glfwSwapBuffers(window);
@@ -1125,12 +1176,56 @@ void updateMoonPosition(unsigned int sunShaderProgram) {
 
 }
 
-void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands) {
-	if (isClickOnWater(clickX, clickY, islands, numIslands)) {
-		mouseClicked = true;
+
+// Provera da li tačka leži unutar trougla
+bool isPointInTriangle(float px, float py, float ax, float ay, float bx, float by, float cx, float cy) {
+	float denominator = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+	float alpha = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / denominator;
+	float beta = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / denominator;
+	float gamma = 1.0f - alpha - beta;
+
+	return (alpha >= 0 && beta >= 0 && gamma >= 0);
+}
+
+// Funkcija za proveru klika na vatru
+bool isClickOnFire(float clickX, float clickY, float fireVertices[]) {
+	float ax = fireVertices[0], ay = fireVertices[1];
+	float bx = fireVertices[2], by = fireVertices[3];
+	float cx = fireVertices[4], cy = fireVertices[5];
+
+	return isPointInTriangle(clickX, clickY, ax, ay, bx, by, cx, cy);
+}
+
+// Funkcija za obradu klika
+void handleMouseClick(float clickX, float clickY, Island* islands, int numIslands, float fireVertices[]) {
+	if (isClickOnFire(clickX, clickY, fireVertices)) {
+		mouseClickedOnFire = true;
+
+	}
+	else if (isClickOnWater(clickX, clickY, islands, numIslands)) {
+		mouseClickedOnWater = true;
+
 	}
 }
 
+// Funkcija za proveru klika na vodu (nije ni vatru ni ostrvo)
+bool isClickOnWater(float clickX, float clickY, Island* islands, int numIslands) {
+	for (int i = 0; i < numIslands; ++i) {
+		if (isClickOnIsland(clickX, clickY, islands[i])) {
+			return false; // Klik je na ostrvu
+		}
+	}
+	return true; // Klik je na vodi
+}
+
+// Provera da li je klik na ostrvo
+bool isClickOnIsland(float clickX, float clickY, const Island& island) {
+	float dx = clickX - island.x;
+	float dy = clickY - island.y;
+	return (dx * dx + dy * dy) <= (island.radius * island.radius); // Proveravamo da li je unutar kruga
+}
+
+// Mouse callback funkcija
 void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		double xpos, ypos;
@@ -1139,38 +1234,45 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods) {
 		int windowWidth, windowHeight;
 		glfwGetWindowSize(window, &windowWidth, &windowHeight); // Dimenzije prozora aplikacije
 
-		// Konvertuj koordinate miša iz prozorskog sistema u OpenGL normalizovane koordinate
 		clickX = (xpos / windowWidth) * 2.0 - 1.0;   // Mapiranje na [-1, 1]
-		clickY = -((ypos / windowHeight) * 2.0 - 1.0); //
+		clickY = -((ypos / windowHeight) * 2.0 - 1.0); // Obrnuto Y
 
 		clickTime = glfwGetTime();  // Započni vreme kada je kliknut taster
-		//mouseClicked = true;
 
+		// Definicija ostrva
 		Island islands[] = {
-			Island(0.5f, 0.0f, 0.0f),  // Ostrvo 1
-			Island(0.3f, 0.8f, 0.0f),  // Ostrvo 2
-			Island(0.4f, -0.8f, 0.0f)  // Ostrvo 3
+			Island(0.5f, 0.0f, 0.1f),  // Ostrvo 1
+			Island(0.3f, 0.8f, 0.1f),  // Ostrvo 2
+			Island(0.4f, -0.8f, 0.1f)  // Ostrvo 3
 		};
 
-		int numIslands = sizeof(islands) / sizeof(islands[0]);  // Broj ostrva
+		int numIslands = sizeof(islands) / sizeof(islands[0]); // Broj ostrva
 
-		handleMouseClick(clickX, clickY, islands, numIslands);
+		float fireVertices[] = {
+		-0.3f - 0.1f, -0.1f, // A
+		-0.1f + 0.1f, -0.1f, // B
+		-0.2f,  0.2f - 0.8f             // C (spušteno za 'tolerance' na Y osi)
+		};
+
+		// Obrada klika
+		handleMouseClick(clickX, clickY, islands, numIslands, fireVertices);
 	}
 }
 
-bool isClickOnWater(float clickX, float clickY, const Island* islands, int numIslands) {
-	for (int i = 0; i < numIslands; i++) {
-		float dx = clickX - islands[i].x;
-		float dy = clickY - islands[i].y;
-		float distance = sqrt(dx * dx + dy * dy);
 
-		// Proverite da li je klik unutar radijusa ostrva
-		if (distance <= islands[i].radius) {
-			return false; // Klik je na ostrvu
-		}
-	}
-	return true; // Klik je na vodi
-}
+//bool isClickOnWater(float clickX, float clickY, const Island* islands, int numIslands) {
+//	for (int i = 0; i < numIslands; i++) {
+//		float dx = clickX - islands[i].x;
+//		float dy = clickY - islands[i].y;
+//		float distance = sqrt(dx * dx + dy * dy);
+//
+//		// Proverite da li je klik unutar radijusa ostrva
+//		if (distance <= islands[i].radius) {
+//			return false; // Klik je na ostrvu
+//		}
+//	}
+//	return true; // Klik je na vodi
+//}
 
 
 
