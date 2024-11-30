@@ -83,6 +83,11 @@ float flameLightPosition[20]; // Za pozicije svetla
 float timeFactor = 1.0f;  // Početna brzina (normalna brzina)
 float initialTimeFactor = 1.0f;  // Početna vrednost za resetovanje
 
+std::chrono::steady_clock::time_point lastClickTime; // Vreme poslednjeg klika
+const int debounceDelay = 200; // Kašnjenje za debounce u milisekundama
+
+float sharkSpeed = 0.001f; // Brzina ajkula
+
 unsigned int compileShader(GLenum type, const char* source); //Uzima kod u fajlu na putanji "source", kompajlira ga i vraca sejder tipa "type"
 unsigned int createShader(const char* vsSource, const char* fsSource); //Pravi objedinjeni sejder program koji se sastoji od Verteks sejdera ciji je kod na putanji vsSource i Fragment sejdera na putanji fsSource
 void generateCircle(float* circle, int offset, float r, float centerX, float centerY);
@@ -108,11 +113,14 @@ void updateFlameLight(float flameSize, float time);
 void decreaseTimeSpeed();
 void increaseTimeSpeed();
 void resetTime();
+bool isDebounced();
 
 
 
 int main(void)
 {
+
+	lastClickTime = std::chrono::steady_clock::now() - std::chrono::milliseconds(debounceDelay);
 
 	// ++++++++++++++++++++++++++++++++++++++++++++++++++++++ INICIJALIZACIJA ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -312,7 +320,6 @@ int main(void)
 	float sharkPositions[numSharks][2]; // Trenutne pozicije ajkula (x, y)
 	float sharkDirections[numSharks][2]; // Pravci kretanja ajkula (x, y)
 	bool sharksMoving[numSharks]; // Da li se ajkula kreće
-	float sharkSpeed = 0.001f; // Brzina ajkula
 
 	float initialSharkPositions[numSharks][2]; // Početne pozicije ajkula
 	for (int i = 0; i < numSharks; i++) {
@@ -559,7 +566,6 @@ int main(void)
 
 	while (!glfwWindowShouldClose(window)) // Infinite loop
 	{
-		// User input (Escape to close the window)
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
@@ -578,12 +584,11 @@ int main(void)
 			resetTime();
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && waterTransparencyEnabled) {
+		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && waterTransparencyEnabled && isDebounced()) {
 			waterTransparencyEnabled = false;
 		}
-		else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !waterTransparencyEnabled) {
+		else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !waterTransparencyEnabled && isDebounced()) {
 			waterTransparencyEnabled = true;
-
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -657,7 +662,6 @@ int main(void)
 			updateMoonPosition(sunShaderProgram);
 			glBindVertexArray(VAO[7]);
 			glDrawArrays(GL_TRIANGLE_FAN, 0, (CRES + 2));
-			//mesec izlazi
 		}
 
 		glViewport(0, 0, wWidth, wHeight / 2); // Set viewport for the bottom half
@@ -784,7 +788,7 @@ int main(void)
 		glUniform1f(sharkTimeLocation, glfwGetTime()*timeFactor);
 
 		unsigned int sharkSpeedLocation = glGetUniformLocation(sharkShaderProgram, "speed");
-		glUniform1f(sharkSpeedLocation, 0.8f);
+		glUniform1f(sharkSpeedLocation, 0.8f*timeFactor);
 
 		float sharkVertices[numSharks * 9];
 		for (int i = 0; i < numSharks; i++) {
@@ -825,7 +829,7 @@ int main(void)
 			// Generisanje podataka za krug
 			float circle5[(CRES + 2) * 2];
 			generateCircle(circle5, 0, r5pom, clickX, clickY);
-			r5pom += 0.00004f;
+			r5pom += 0.00004f*timeFactor;
 			bindCircleData(VAO[6], VBO[6], circle5, sizeof(circle5));
 
 			// Renderovanje kruga
@@ -1130,15 +1134,32 @@ int main(void)
 }
 
 
+bool isDebounced() {
+	auto now = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastClickTime).count();
+	if (duration > debounceDelay) {
+		lastClickTime = now;
+		return true;
+	}
+	return false;
+}
+
 void increaseTimeSpeed() {
-	timeFactor += 0.1f;
-	angleSpeed += 0.00001;
+	if (isDebounced()) {
+		std::cout << "vece";
+		timeFactor += 0.3f;
+		angleSpeed += 0.0001;
+		sharkSpeed += 0.0001;
+	}
 }
 
 void decreaseTimeSpeed() {
-	if (timeFactor - 0.1 >= 1.0) {
-		timeFactor -= 0.1f;
-		angleSpeed -= 0.00001;
+
+	if (isDebounced() && timeFactor - 0.3 >= 0.0) {
+		std::cout << "manje";
+		timeFactor -= 0.3f;
+		angleSpeed -= 0.0001;
+		sharkSpeed -= 0.0001;
 	}
 }
 
@@ -1149,6 +1170,8 @@ void resetTime() {
 		cloud.x += 0.01f; // Pomera oblak sa levog na desni kraj ekrana
 	}
 	angle = 0;
+	sharkSpeed = 0.001f; // Brzina ajkula
+
 }
 
 
