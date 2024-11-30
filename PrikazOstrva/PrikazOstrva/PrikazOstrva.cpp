@@ -1155,7 +1155,7 @@ void increaseTimeSpeed() {
 
 void decreaseTimeSpeed() {
 
-	if (isDebounced() && timeFactor - 0.3 >= 0.0) {
+	if (isDebounced() && timeFactor - 0.3 > 0.0) {
 		std::cout << "manje";
 		timeFactor -= 0.3f;
 		angleSpeed -= 0.0001;
@@ -1166,12 +1166,7 @@ void decreaseTimeSpeed() {
 void resetTime() {
 	timeFactor = initialTimeFactor;  // Vraća brzinu na početnu vrednost
 	angleSpeed = 0.0003f;   // Brzina pomeranja ugla
-	for (auto& cloud : clouds) {
-		cloud.x += 0.01f; // Pomera oblak sa levog na desni kraj ekrana
-	}
-	angle = 0;
 	sharkSpeed = 0.001f; // Brzina ajkula
-
 }
 
 
