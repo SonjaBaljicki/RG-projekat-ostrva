@@ -989,7 +989,7 @@ int main(void)
 			for (int i = 0; i < 5; i++) {
 				if (isVisible[i]) { // Prvi element uvek treba da bude vidljiv na početku
 					// Animacija trenutnog objekta
-					offsetY[i] += 0.0002f; // Povećaj Y poziciju
+					offsetY[i] += 0.0002f*timeFactor; // Povećaj Y poziciju
 
 					if (offsetY[i] > 0.5f) { // Ako dostigne limit, sakrij ga i prikaži sledeći
 						isVisible[i] = false;
@@ -1133,18 +1133,13 @@ int main(void)
 void increaseTimeSpeed() {
 	timeFactor += 0.1f;
 	angleSpeed += 0.00001;
-	for (auto& cloud : clouds) {
-		cloud.x += cloud.speed + 0.001; // Pomera oblak sa levog na desni kraj ekrana
-	}
 }
 
 void decreaseTimeSpeed() {
-	timeFactor -= 0.01f;  
-	angleSpeed -= 0.00001;
-	for (auto& cloud : clouds) {
-		cloud.x += cloud.speed - 0.001; // Pomera oblak sa levog na desni kraj ekrana
+	if (timeFactor - 0.1 >= 1.0) {
+		timeFactor -= 0.1f;
+		angleSpeed -= 0.00001;
 	}
-
 }
 
 void resetTime() {
@@ -1186,7 +1181,7 @@ void setUniforms(GLuint shaderProgram) {
 
 void updateClouds() {
 	for (auto& cloud : clouds) {
-		cloud.x += cloud.speed; // Pomera oblak sa levog na desni kraj ekrana
+		cloud.x += cloud.speed * timeFactor; // Pomera oblak sa levog na desni kraj ekrana
 
 		if (cloud.x > 1.0f) {
 			cloud.x = -1.0f - (rand() % 10) * 0.1f;
