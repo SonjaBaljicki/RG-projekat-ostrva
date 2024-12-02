@@ -1,13 +1,13 @@
 #version 330 core
 
-layout (location = 0) in vec3 aPos;  // Pozicija ajkule (3D koordinata)
+layout (location = 0) in vec2 aPos;  // Pozicija ajkule (3D koordinata)
 
 uniform float waterLevel;  // Nivo vode (pomeraj po Y osi)
 uniform float time;        // Vreme za animaciju
 uniform float speed;       // Brzina horizontalnog kretanja
 
 void main() {
-    vec3 newPos = aPos;
+    vec2 newPos = aPos;
 
     // Pomeraj ajkule prema nivou vode, slican pomeraju ostrva
     if (newPos.y < waterLevel) {
@@ -18,5 +18,5 @@ void main() {
     newPos.x += sin(time * speed + newPos.y) * 0.09;  // Pomera ajkulu levo-desno u zavisnosti od vremena i visine
 
     // Postavljanje nove pozicije ajkule
-    gl_Position = vec4(newPos, 1.0);
+    gl_Position = vec4(newPos, 0.0, 1.0);
 }
