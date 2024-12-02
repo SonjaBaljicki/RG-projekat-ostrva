@@ -1,14 +1,13 @@
 #version 330 core
-layout(location = 0) in vec2 aPos;  // Ulazne koordinate
-uniform float scaleY;               // Faktor skaliranja za gornji vertex
+layout(location = 0) in vec2 aPos; 
+uniform float scaleY;              
 
 void main()
 {
-    // Provera da li je vertex "gornji" (Y == maksimalni Y)
     vec2 position = aPos;
-    if (aPos.y > 0.0)  // Pretpostavljamo da je gornji vertex onaj sa pozitivnom Y koordinatom
+    if (aPos.y > 0.0)  
     {
-        position.y *= scaleY;  // Skaliraj samo Y koordinatu gornjeg vertex-a
+        position.y *= scaleY; 
     }
-    gl_Position = vec4(position, 0.0, 1.0);  // Postavi novu poziciju
+    gl_Position = vec4(position, 0.0, 1.0);
 }

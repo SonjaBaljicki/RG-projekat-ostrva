@@ -2,10 +2,10 @@
 
 layout(location = 0) in vec2 position;
 
-uniform vec2 offset;    // Pomeraj pozicije
-uniform float waterLevel; // Nivo vode
+uniform vec2 offset;   
+uniform float waterLevel; 
 
-out vec2 fragPos;                  // Pozicija fragmenta za fragment shader
+out vec2 fragPos;     
 
 
 void main()

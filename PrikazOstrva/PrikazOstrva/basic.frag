@@ -1,9 +1,9 @@
 #version 330 core
 
-uniform vec4 color; // Boja
+uniform vec4 color;
 
 out vec4 FragColor;
-uniform vec4 ambientLight;  // Ambijentalna svetlost
+uniform vec4 ambientLight; 
 
 
 void main()
