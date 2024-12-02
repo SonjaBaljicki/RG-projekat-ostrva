@@ -237,12 +237,16 @@ int main(void)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(palmVertices), palmVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0); // Koordinate
 	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	glBindVertexArray(fireVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, fireVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(fireVertices), fireVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0); // Koordinate
 	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 
 	unsigned int islandsVAO[3]; 
@@ -303,6 +307,8 @@ int main(void)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(waterVertices), waterVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	unsigned int redCircleVAO;
 	unsigned int redCircleVBO;
@@ -375,6 +381,8 @@ int main(void)
 
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 
 	bool waterTransparencyEnabled = false;
@@ -555,113 +563,122 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-
+	const double TARGET_FRAME_TIME = 1.0 / 60.0;
+	double lastFrameTime = glfwGetTime();
 
 	while (!glfwWindowShouldClose(window))
 	{
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		{
-			glfwSetWindowShouldClose(window, GL_TRUE);
-		}
+		double currentFrameTime = glfwGetTime();
+		double deltaTime = currentFrameTime - lastFrameTime;
 
-		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-		{
-			decreaseTimeSpeed();
-		}
-		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-		{
-			increaseTimeSpeed();
-		}
-		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-		{
-			resetTime();
-		}
+		//if (deltaTime >= TARGET_FRAME_TIME) {
 
-		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && waterTransparencyEnabled && isDebounced()) {
-			waterTransparencyEnabled = false;
-		}
-		else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !waterTransparencyEnabled && isDebounced()) {
-			waterTransparencyEnabled = true;
-		}
+			if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			{
+				glfwSetWindowShouldClose(window, GL_TRUE);
+			}
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
+			{
+				decreaseTimeSpeed();
+			}
+			if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)   //nemam kp_add i kp_subtract
+			{
+				increaseTimeSpeed();
+			}
+			if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+			{
+				resetTime();
+			}
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && waterTransparencyEnabled && isDebounced()) {
+				waterTransparencyEnabled = false;
+			}
+			else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !waterTransparencyEnabled && isDebounced()) {
+				waterTransparencyEnabled = true;
+			}
 
-		glfwSetCursor(window, cursor);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		int wWidth = mode->width;
-		int wHeight = mode->height;
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glEnable(GL_SCISSOR_TEST);
-		glEnable(GL_DEPTH_TEST);
+			glfwSetCursor(window, cursor);
 
+			int wWidth = mode->width;
+			int wHeight = mode->height;
 
-		// --- Top half of the screen (Sky blue) ---
-
-		glViewport(0, wHeight / 2, wWidth, wHeight / 2);
-		glScissor(0, wHeight / 2, wWidth, wHeight / 2);
-
-		setSkyAndStars(starVAO, starShaderProgram);
-
-		setClouds(cloudVAO, cloudShaderProgram);
-
-		updateSun(sunVAO, sunShaderProgram);
-
-		glViewport(0, 0, wWidth, wHeight / 2); 
-		glScissor(0, 0, wWidth, wHeight / 2); 
+			glEnable(GL_SCISSOR_TEST);
+			glEnable(GL_DEPTH_TEST);
 
 
-		writeName(nameVAO, nameVBO, nameTexture, nameShaderProgram);
-		
-		setPalm(palmVAO, palmVBO, palmShaderProgram);
+			// --- Top half of the screen (Sky blue) ---
 
-		float fireSize = sin(glfwGetTime() * timeFactor) * 1.0f + 1.5f;
+			glViewport(0, wHeight / 2, wWidth, wHeight / 2);
+			glScissor(0, wHeight / 2, wWidth, wHeight / 2);
 
-		setFire(fireVAO, fireVBO, fireShaderProgram, fireSize);
+			setSkyAndStars(starVAO, starShaderProgram);
 
-		float waterLevel = abs(sin(glfwGetTime()*timeFactor)) * 0.3f;
+			setClouds(cloudVAO, cloudShaderProgram);
 
-		moveSharks();
+			updateSun(sunVAO, sunShaderProgram);
 
-		setSharks(sharksVAO, sharksVBO, sharkShaderProgram, waterLevel);
-
-		if (mouseClickedOnWater) {
-			beginRedCircle(r5pom, redCircleR, redCircleVAO, redCircleVBO, redCircleShaderProgram);
-			r5pom += 0.00004f * timeFactor;
-		}
-		else {
-			returnSharks();
-			r5pom = redCircleR;
-
-		}
-
-		float flameTime = glfwGetTime() * timeFactor;
-
-		updateFlameLight(fireSize, flameTime);
-		
-		setIslands(fireSize,waterLevel, islandsVAO, islandsVBO, islandsShaderProgram);
-
-		setWater(waterVAO, waterVBO, waterShaderProgram, waterTransparencyEnabled);
+			glViewport(0, 0, wWidth, wHeight / 2);
+			glScissor(0, 0, wWidth, wHeight / 2);
 
 
-		glBindVertexArray(0);
-		glUseProgram(0);
+			writeName(nameVAO, nameVBO, nameTexture, nameShaderProgram);
 
-		glDisable(GL_SCISSOR_TEST);
-		glDisable(GL_DEPTH_TEST);
+			setPalm(palmVAO, palmVBO, palmShaderProgram);
 
-		glViewport(0, 0, wWidth, wHeight);
+			float fireSize = sin(glfwGetTime() * timeFactor) * 1.0f + 1.5f;
 
-		if (mouseClickedOnFire) {
+			setFire(fireVAO, fireVBO, fireShaderProgram, fireSize);
 
-			generateSmokeLetters(pomocVAO, pomocVBO, smokeTexture, pTexture, oTexture, mTexture, cTexture, pomocShaderProgram);
-		}
+			float waterLevel = abs(sin(glfwGetTime() * timeFactor)) * 0.3f;
 
-		glfwSwapBuffers(window);
+			moveSharks();
 
-		glfwPollEvents();
+			setSharks(sharksVAO, sharksVBO, sharkShaderProgram, waterLevel);
+
+			if (mouseClickedOnWater) {
+				beginRedCircle(r5pom, redCircleR, redCircleVAO, redCircleVBO, redCircleShaderProgram);
+				r5pom += 0.00004f * timeFactor;
+			}
+			else {
+				returnSharks();
+				r5pom = redCircleR;
+
+			}
+
+			float flameTime = glfwGetTime() * timeFactor;
+
+			updateFlameLight(fireSize, flameTime);
+
+			setIslands(fireSize, waterLevel, islandsVAO, islandsVBO, islandsShaderProgram);
+
+			setWater(waterVAO, waterVBO, waterShaderProgram, waterTransparencyEnabled);
+
+
+			glBindVertexArray(0);
+			glUseProgram(0);
+
+			glDisable(GL_SCISSOR_TEST);
+			glDisable(GL_DEPTH_TEST);
+
+			glViewport(0, 0, wWidth, wHeight);
+
+			if (mouseClickedOnFire) {
+
+				generateSmokeLetters(pomocVAO, pomocVBO, smokeTexture, pTexture, oTexture, mTexture, cTexture, pomocShaderProgram);
+			}
+
+			glfwSwapBuffers(window);
+
+			glfwPollEvents();
+
+			lastFrameTime = currentFrameTime;
+		//}
 	}
 	glDeleteVertexArrays(3, islandsVAO);
 	glDeleteBuffers(3, islandsVBO);
