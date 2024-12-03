@@ -1,3 +1,45 @@
+# IntelliSense and browsing database
+.vs/
+*.VC.db
+*.VC.opendb
+
+# Build directories
+Debug/
+Release/
+x64/Debug/
+x64/Release/
+
+# Temporary files
+*.log
+*.tmp
+*.obj
+*.pdb
+*.ilk
+
+# NuGet packages
+packages/
+
+# Visual Studio specific
+*.user
+*.ipch
+*.suo
+*.ncb
+*.aps
+*.sdf
+*.cache
+*.filters
+
+# CMake
+build/
+CMakeFiles/
+CMakeCache.txt
+
+# OS specific
+*.DS_Store
+Thumbs.db
+
+
+
 # Prerequisites
 *.d
 
