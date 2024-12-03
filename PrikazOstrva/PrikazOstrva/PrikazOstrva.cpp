@@ -1029,8 +1029,8 @@ void setIslands(float fireSize, float waterLevel, unsigned int *VAO, unsigned in
 	unsigned int fireSizeLocation = glGetUniformLocation(islandsShaderProgram, "scaleY");
 	glUniform1f(fireSizeLocation, fireSize);
 
-	glUniform3fv(flameLightPositionLoc, 1, flameLightPosition);  
-	glUniform3fv(flameLightColorLoc, 1, flameLightColor);      
+	glUniform2f(flameLightPositionLoc, flameLightPosition[0], flameLightPosition[1]);
+	glUniform3f(flameLightColorLoc, flameLightColor[0], flameLightColor[1], flameLightColor[2]);
 	glUniform1f(flameLightIntensityLoc, flameLightIntensity);       
 
 

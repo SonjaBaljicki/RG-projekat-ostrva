@@ -1,25 +1,24 @@
 #version 330 core
 
-uniform vec4 color;              // Boja plamena
-out vec4 FragColor;              // Izlazna boja fragmenta
-uniform vec4 ambientLight;       // Ambijentalna svetlost
+uniform vec4 color;              
+out vec4 FragColor;             
+uniform vec4 ambientLight;      
 
-// Parametri svetla
-uniform vec3 flameLightPosition; // Pozicija svetla
-uniform vec3 flameLightColor;    // Boja svetla
-uniform float flameLightIntensity; // Intenzitet svetla
+uniform vec2 flameLightPosition;
+uniform vec3 flameLightColor;
+uniform float flameLightIntensity;
 
-uniform float scaleY;            // Faktor skaliranja za plamen (visina plamena)
-in vec2 fragPos;                // Pozicija fragmenta
+uniform float scaleY;           
+in vec2 fragPos;               
 
 void main()
 {
     vec4 ambient = ambientLight * color;
 
-    vec2 lightDir = normalize(flameLightPosition.xy - fragPos);
+    vec2 lightDir = normalize(flameLightPosition - fragPos);
     float diff = max(dot(lightDir, vec2(0.0, 1.0)), 0.0);
 
-    float distance = length(flameLightPosition.xy - fragPos);
+    float distance = length(flameLightPosition - fragPos);
     float attenuation = 1.0 / (distance * distance);
 
     attenuation *= 1.0f + scaleY * 0.4f;  
