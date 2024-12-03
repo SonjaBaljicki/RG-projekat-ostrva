@@ -16,7 +16,7 @@
 #include "stb_image.h"
 
 
-float angleSpeed = 0.0003f;     // Brzina pomeranja ugla
+float angleSpeed = 0.003f;     // Brzina pomeranja ugla
 float radiusX = -0.9f;          // Poluprečnik putanje (polukrug)
 float radiusY = -0.9f;          // Poluprečnik putanje (polukrug)
 float sunOffsetX = -0.9f;		// Početna pozicija X (donja leva ivica gornje polovine)
@@ -33,7 +33,7 @@ struct Cloud {
 	Cloud(float startX, float startY, float speed, float radius)
 		: x(startX), y(startY), speed(speed), radius(radius) {
 	}
-	Cloud() : x(0.0f), y(0.0f), speed(0.01f), radius(0.1f) {}
+	Cloud() : x(0.0f), y(0.0f), speed(0.1f), radius(0.1f) {}
 };
 Cloud clouds[3];
 const int STAR_COUNT = 100;
@@ -78,7 +78,7 @@ std::chrono::steady_clock::time_point lastClickTime;
 const int debounceDelay = 200;
 
 
-float sharkSpeed = 0.001f;
+float sharkSpeed = 0.01f;
 const int numSharks = 4; 
 float sharkPositions[numSharks][2];
 float sharkDirections[numSharks][2]; 
@@ -335,9 +335,9 @@ int main(void)
 	generateCircle(cloud3, 0, r_cloud, 0.0f, 0.0f);
 	bindCircleData(cloudVAO[2], cloudVBO[2], cloud3, sizeof(cloud3));
 
-	clouds[0] = Cloud(-1.0f, 0.8f, 0.0001f, 0.1f); 
-	clouds[1] = Cloud(-0.5f, 0.8f, 0.00015f, 0.12f);
-	clouds[2] = Cloud(-0.8f, 0.8f, 0.0002f, 0.08f);
+	clouds[0] = Cloud(-1.0f, 0.8f, 0.001f, 0.1f); 
+	clouds[1] = Cloud(-0.5f, 0.8f, 0.0015f, 0.12f);
+	clouds[2] = Cloud(-0.8f, 0.8f, 0.002f, 0.08f);
 
 
 	const float centerX = 0.0f;
@@ -571,7 +571,7 @@ int main(void)
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = currentFrameTime - lastFrameTime;
 
-		//if (deltaTime >= TARGET_FRAME_TIME) {
+		if (deltaTime >= TARGET_FRAME_TIME) {
 
 			if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			{
@@ -643,7 +643,7 @@ int main(void)
 
 			if (mouseClickedOnWater) {
 				beginRedCircle(r5pom, redCircleR, redCircleVAO, redCircleVBO, redCircleShaderProgram);
-				r5pom += 0.00004f * timeFactor;
+				r5pom += 0.0004f * timeFactor;
 			}
 			else {
 				returnSharks();
@@ -678,7 +678,7 @@ int main(void)
 			glfwPollEvents();
 
 			lastFrameTime = currentFrameTime;
-		//}
+		}
 	}
 	glDeleteVertexArrays(3, islandsVAO);
 	glDeleteBuffers(3, islandsVBO);
@@ -748,8 +748,8 @@ void increaseTimeSpeed() {
 	if (isDebounced()) {
 		std::cout << "vece";
 		timeFactor += 0.3f;
-		angleSpeed += 0.0001;
-		sharkSpeed += 0.0001;
+		angleSpeed += 0.001;
+		sharkSpeed += 0.001;
 	}
 }
 
@@ -758,15 +758,15 @@ void decreaseTimeSpeed() {
 	if (isDebounced() && timeFactor - 0.3 > 0.0) {
 		std::cout << "manje";
 		timeFactor -= 0.3f;
-		angleSpeed -= 0.0001;
-		sharkSpeed -= 0.0001;
+		angleSpeed -= 0.001;
+		sharkSpeed -= 0.001;
 	}
 }
 
 void resetTime() {
 	timeFactor = initialTimeFactor; 
-	angleSpeed = 0.0003f; 
-	sharkSpeed = 0.001f; 
+	angleSpeed = 0.003f; 
+	sharkSpeed = 0.01f; 
 }
 
 
@@ -960,7 +960,7 @@ void setSharks(unsigned int sharksVAO, unsigned int sharksVBO, unsigned int shar
 	}
 
 	unsigned int sharkColorLocation = glGetUniformLocation(sharkShaderProgram, "color");
-	glUniform4f(sharkColorLocation, 0.0f, 0.03, 1.0f, 1.0f);
+	glUniform4f(sharkColorLocation, 0.5f, 0.5f, 0.5f, 1.0f);
 
 	unsigned int waterLevelLocation = glGetUniformLocation(sharkShaderProgram, "waterLevel");
 	glUniform1f(waterLevelLocation, waterLevel);
@@ -1103,7 +1103,7 @@ void generateSmokeLetters(unsigned int pomocVAO, unsigned int pomocVBO, unsigned
 
 	for (int i = 0; i < 5; i++) {
 		if (isVisible[i]) { 
-			offsetY[i] += 0.0002f * timeFactor;
+			offsetY[i] += 0.002f * timeFactor;
 
 			if (offsetY[i] > 0.5f) {
 				isVisible[i] = false;
